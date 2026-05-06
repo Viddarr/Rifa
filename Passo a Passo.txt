@@ -1,0 +1,48 @@
+Considerando que você tem noção de Node/Express mas não domina, aqui vai um passo a passo honesto e em ordem:
+
+Fase 1 — Preparação (antes de escrever uma linha de código)
+
+Cria conta no EFI Bank e aguarda aprovação (1-2 dias úteis)
+Ativa uma chave PIX na conta
+Acessa o painel do EFI, vai em API e gera o Client ID e Client Secret
+Cria conta no Railway.app conectada ao seu GitHub
+Compra o domínio no Registro.br se quiser um
+
+
+Fase 2 — Backend
+
+Cria o projeto Node.js com Express
+Monta o banco SQLite com as tabelas: rifas, participantes, bilhetes
+Cria a rota de compra — recebe nome, whatsapp e quantidade, salva no banco
+Instala o SDK do EFI Bank e faz a rota gerar uma cobrança PIX real
+Testa a cobrança no sandbox do EFI (dinheiro fictício)
+Instala o ngrok para expor seu servidor local à internet
+Configura o webhook no painel do EFI apontando para sua URL do ngrok
+Testa o fluxo completo: compra → PIX gerado → simula pagamento → webhook confirma → banco atualiza
+Cria a rota de sorteio — sorteia aleatoriamente entre os bilhetes pagos
+
+
+Fase 3 — Frontend
+
+Pega o HTML que fizemos aqui e conecta as chamadas de API reais no lugar dos comentários
+Testa o fluxo visual completo localmente
+
+
+Fase 4 — Deploy
+
+Sobe o backend no Railway com PostgreSQL (troca o SQLite)
+Configura todas as variáveis de ambiente no Railway (JWT, EFI, PIX)
+Sobe o frontend no Vercel apontando para a URL do backend no Railway
+Atualiza o webhook no painel do EFI para a URL de produção real
+Aponta o domínio para o Vercel/Railway e aguarda o SSL ativar
+
+
+Fase 5 — Validação antes de lançar
+
+Faz uma compra real com PIX de R$0,01 pra testar tudo em produção
+Confirma que o webhook está chegando e o banco está atualizando
+Realiza um sorteio de teste
+Testa no celular
+
+
+A parte que mais trava iniciantes é a etapa 11-13 — webhook com ngrok. Quando chegar lá me fala que eu te explico em detalhe.
