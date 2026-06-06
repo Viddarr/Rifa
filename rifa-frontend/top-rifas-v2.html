@@ -272,7 +272,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     <span class="shine-green">SORTE</span><br/>
     <span style="color:var(--white)">COMEÇA AQUI</span>
   </h1>
-  <p id="hero-tag">Compre seus bilhetes, aguarde o sorteio, e boa sorte.</p>
+  <p id="hero-tag">Compre seus bilhetes, aguarde o sorteio e boa sorte.</p>
   <div id="hero-stats">
     <div class="hst">
       <span class="hst-v" style="color:var(--red)"  id="stat-total">1.000</span>
@@ -471,116 +471,255 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 <div id="toast"></div>
 
 <script>
-/* ── CONFIG ─────────────────────────────────────────
-   Preencha via backend / API                         */
-const CONFIG = {
-  totalBilhetes:   1000,
-  precoBilhete:    10,        // R$
-  bilhetesVendidos: 353,
-  datasorteio:     '10/05/2025',
+// ══════════════════════════════════════════════════════════════════════
+// CONFIGURAÇÃO
+// Em produção troque pela URL do Railway
+// ══════════════════════════════════════════════════════════════════════
+const API  = 'http://localhost:3001/api';
+const RIFA_ID = 3;   // ID da rifa que esta página representa
+
+// ══════════════════════════════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════════════════════════════
+const state = {
+  qtd:        0,
+  precoBilhete: 0,      // preenchido ao carregar a rifa
+  pedido_id:  null,     // preenchido após criar o pedido
+  timerSec:   3600,
+  timerInt:   null,
+  pollingInt: null,
 };
 
-/* ── ESTADO ────────────────────────────────────────── */
-const state = { qtd: 0, timerSec: 3600, timerInt: null };
-
-/* ── HELPERS ───────────────────────────────────────── */
+// ══════════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════════
 const R   = id => document.getElementById(id);
-const fmt = v  => 'R$ ' + v.toFixed(2).replace('.', ',');
+const fmt = v  => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
 const pluralBilhete = n => n === 1 ? '1 bilhete' : `${n} bilhetes`;
 
-function showToast(msg, dur = 2800) {
+function showToast(msg, dur = 3000) {
   const t = R('toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), dur);
 }
 
-/* ── SELETOR DE QUANTIDADE ─────────────────────────── */
+function setLoading(loading) {
+  const btn = R('btn-comprar');
+  btn.disabled   = loading;
+  btn.textContent = loading ? 'AGUARDE...' : 'PAGAR COM PIX';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// CARREGA RIFA DA API
+// ══════════════════════════════════════════════════════════════════════
+async function carregarRifa() {
+  try {
+    const res  = await fetch(`${API}/rifas/${RIFA_ID}`);
+    if (!res.ok) throw new Error('Rifa não encontrada');
+    const rifa = await res.json();
+
+    state.precoBilhete = parseFloat(rifa.preco_bilhete);
+
+    // Stats do hero
+    const vendidos  = parseInt(rifa.total_bilhetes_vendidos) || 0;
+    const meta      = rifa.meta_bilhetes;
+
+    R('stat-total').textContent = meta ? meta.toLocaleString('pt-BR') : '∞';
+    R('stat-preco').textContent = fmt(rifa.preco_bilhete);
+    R('stat-data').textContent  = rifa.data_sorteio
+      ? rifa.data_sorteio.slice(5, 10).split('-').reverse().join('/')
+      : '—';
+    R('stat-disp').textContent  = meta ? (meta - vendidos).toLocaleString('pt-BR') : '∞';
+
+    // Progresso
+    if (meta) {
+      const pct = Math.min(100, Math.round((vendidos / meta) * 100));
+      R('prog-fill').style.width = pct + '%';
+      R('prog-count').innerHTML  = `${vendidos} <span style="color:var(--gray-d);font-size:16px;">/${meta}</span>`;
+      R('prog-pct').textContent  = `${pct}% vendido`;
+    } else {
+      R('prog-fill').style.width = '0%';
+      R('prog-count').textContent = vendidos + ' vendidos';
+      R('prog-pct').textContent   = '';
+    }
+
+    // Prêmios
+    if (rifa.premios?.length) {
+      if (rifa.premios[0]) R('pc1-desc').textContent = rifa.premios[0].descricao;
+      if (rifa.premios[1]) R('pc2-desc').textContent = rifa.premios[1].descricao;
+      if (rifa.premios[2]) R('pc3-desc').textContent = rifa.premios[2].descricao;
+    }
+
+    // Título da página
+    document.title = `${rifa.titulo} — Top Rifas`;
+
+    // Rifa encerrada
+    if (rifa.status !== 'ativa') {
+      R('btn-comprar').disabled   = true;
+      R('btn-comprar').textContent = 'RIFA ENCERRADA';
+    }
+
+    // Resultado do sorteio
+    if (rifa.status === 'sorteada') {
+      await carregarResultado();
+    }
+
+  } catch (err) {
+    console.error('[carregarRifa]', err);
+    showToast('Erro ao carregar dados da rifa');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// RESULTADO DO SORTEIO
+// ══════════════════════════════════════════════════════════════════════
+async function carregarResultado() {
+  try {
+    const res = await fetch(`${API}/rifas/${RIFA_ID}/resultado`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    R('res-name').textContent = data.ganhador.nome;
+    R('resultado-section').classList.remove('oculto');
+  } catch (err) {
+    console.error('[carregarResultado]', err);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SELETOR DE QUANTIDADE
+// ══════════════════════════════════════════════════════════════════════
 function selectQtd(n) {
   state.qtd = n;
-
-  // Atualiza cards visuais
   document.querySelectorAll('.qtd-card').forEach(c => {
     c.classList.toggle('ativo', parseInt(c.dataset.v) === n);
   });
-
-  // Limpa input customizado se selecionou card
   R('input-qtd-custom').value = '';
-
   syncPreview();
 }
 
 function onCustomQtd(val) {
   const n = parseInt(val);
   if (isNaN(n) || n < 1) return;
-
   state.qtd = n;
-
-  // Remove ativo dos cards
   document.querySelectorAll('.qtd-card').forEach(c => c.classList.remove('ativo'));
-
   syncPreview();
 }
 
 function syncPreview() {
-  const total = state.qtd * CONFIG.precoBilhete;
+  const total = state.qtd * state.precoBilhete;
   R('preview-qtd-text').textContent    = pluralBilhete(state.qtd);
   R('total-preview-valor').textContent = fmt(total);
-
-  // Habilita botão só se tiver nome + whats + qtd > 0
   validarForm();
 }
 
-/* ── VALIDAÇÃO ──────────────────────────────────────── */
+// ══════════════════════════════════════════════════════════════════════
+// VALIDAÇÃO DO FORMULÁRIO
+// ══════════════════════════════════════════════════════════════════════
 function validarForm() {
   const ok = state.qtd > 0
-    && R('input-nome').value.trim().length > 0
-    && R('input-whats').value.trim().length > 0;
+    && R('input-nome').value.trim().length > 2
+    && R('input-whats').value.trim().length > 7;
   R('btn-comprar').disabled = !ok;
 }
 
 R('input-nome').addEventListener('input',  validarForm);
 R('input-whats').addEventListener('input', validarForm);
 
-/* ── PROGRESSO ─────────────────────────────────────── */
-function updateProgress() {
-  const v   = CONFIG.bilhetesVendidos;
-  const tot = CONFIG.totalBilhetes;
-  const pct = Math.round((v / tot) * 100);
-  R('prog-fill').style.width  = pct + '%';
-  R('prog-count').innerHTML   = `${v} <span style="color:var(--gray-d);font-size:16px;">/${tot}</span>`;
-  R('prog-pct').textContent   = `${pct}% vendido`;
-  R('stat-disp').textContent  = tot - v;
-}
+// ══════════════════════════════════════════════════════════════════════
+// COMPRA — chama a API e abre o modal PIX
+// ══════════════════════════════════════════════════════════════════════
+R('btn-comprar').addEventListener('click', async () => {
+  const nome     = R('input-nome').value.trim();
+  const telefone = R('input-whats').value.trim();
+  if (!nome || !telefone || state.qtd < 1) return;
 
-/* ── COMPRA / PIX ───────────────────────────────────── */
-R('btn-comprar').addEventListener('click', () => {
-  const nome  = R('input-nome').value.trim();
-  const whats = R('input-whats').value.trim();
-  if (!nome || !whats || state.qtd < 1) return;
+  setLoading(true);
 
-  const total = state.qtd * CONFIG.precoBilhete;
-  R('pix-valor').textContent = fmt(total);
-  R('pix-overlay').classList.add('ativo');
+  try {
+    const res = await fetch(`${API}/pedidos`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        rifa_id:    RIFA_ID,
+        nome,
+        telefone,
+        quantidade: state.qtd,
+      }),
+    });
 
-  // ── Chame sua API aqui:
-  // fetch('/api/bilhetes/comprar', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ nome, whats, quantidade: state.qtd, rifa_id: 1 })
-  // })
-  // .then(r => r.json())
-  // .then(data => {
-  //   R('pix-qr-img').src     = data.qrcode_imagem;  // base64 PNG
-  //   R('pix-cc-input').value = data.copiaecola;
-  // });
+    const data = await res.json();
 
-  startTimer();
+    if (!res.ok) {
+      showToast(data.erro || 'Erro ao gerar PIX');
+      setLoading(false);
+      return;
+    }
+
+    // Guarda o id do pedido para o polling
+    state.pedido_id = data.pedido_id;
+
+    // Preenche o modal com os dados do PIX
+    R('pix-valor').textContent  = fmt(data.pix.valor);
+    R('pix-qr-img').src         = data.pix.qrcode_imagem;
+    R('pix-cc-input').value     = data.pix.copiaecola;
+
+    // Abre o modal
+    R('pix-overlay').classList.add('ativo');
+
+    // Inicia o timer e o polling
+    startTimer();
+    startPolling();
+
+  } catch (err) {
+    console.error('[comprar]', err);
+    showToast('Erro de conexão com o servidor');
+  } finally {
+    setLoading(false);
+  }
 });
 
+// ══════════════════════════════════════════════════════════════════════
+// POLLING — verifica se o PIX foi pago a cada 5 segundos
+// ══════════════════════════════════════════════════════════════════════
+function startPolling() {
+  clearInterval(state.pollingInt);
+
+  state.pollingInt = setInterval(async () => {
+    if (!state.pedido_id) return;
+
+    try {
+      const res  = await fetch(`${API}/pedidos/${state.pedido_id}/status`);
+      const data = await res.json();
+
+      if (data.status === 'pago') {
+        clearInterval(state.pollingInt);
+        clearInterval(state.timerInt);
+
+        // Fecha o modal
+        R('pix-overlay').classList.remove('ativo');
+
+        // Feedback ao usuário
+        showToast('🍀 Pagamento confirmado! Boa sorte!', 5000);
+
+        // Recarrega os dados da rifa para atualizar o progresso
+        await carregarRifa();
+      }
+
+    } catch (err) {
+      console.error('[polling]', err);
+    }
+  }, 5000);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MODAL PIX — fechar
+// ══════════════════════════════════════════════════════════════════════
 R('pix-close').addEventListener('click', () => {
   R('pix-overlay').classList.remove('ativo');
   clearInterval(state.timerInt);
+  clearInterval(state.pollingInt);
 });
 
 R('btn-copiar').addEventListener('click', () => {
@@ -588,28 +727,32 @@ R('btn-copiar').addEventListener('click', () => {
     .then(() => showToast('🍀 Código PIX copiado!'));
 });
 
-/* ── TIMER ─────────────────────────────────────────── */
+// ══════════════════════════════════════════════════════════════════════
+// TIMER de expiração do PIX
+// ══════════════════════════════════════════════════════════════════════
 function startTimer() {
   state.timerSec = 3600;
   clearInterval(state.timerInt);
+
   state.timerInt = setInterval(() => {
     state.timerSec--;
     const m = String(Math.floor(state.timerSec / 60)).padStart(2, '0');
     const s = String(state.timerSec % 60).padStart(2, '0');
     R('pix-timer-count').textContent = `${m}:${s}`;
+
     if (state.timerSec <= 0) {
       clearInterval(state.timerInt);
+      clearInterval(state.pollingInt);
       R('pix-overlay').classList.remove('ativo');
       showToast('PIX expirado. Tente novamente.');
     }
   }, 1000);
 }
 
-/* ── INIT ───────────────────────────────────────────── */
-updateProgress();
-R('stat-total').textContent = CONFIG.totalBilhetes.toLocaleString('pt-BR');
-R('stat-preco').textContent = 'R$ ' + CONFIG.precoBilhete;
-R('stat-data').textContent  = CONFIG.datasorteio.slice(0, 5);
+// ══════════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════════
+carregarRifa();
 </script>
 </body>
 </html>
