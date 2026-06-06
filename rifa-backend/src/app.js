@@ -36,7 +36,7 @@ app.use(rateLimit({
 // Limite mais rigoroso na rota de compra — 10 pedidos por IP a cada 15 min
 app.use('/api/pedidos', rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 200,
   message: { erro: 'Limite de compras atingido. Aguarde alguns minutos.' },
 }));
 

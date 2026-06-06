@@ -33,10 +33,11 @@ router.post('/', async (req, res) => {
 
     // Verifica se ainda tem bilhetes disponíveis (se tiver limite)
     if (rifa.meta_bilhetes) {
-      const { rows: [{ total }] } = await require('../db/database').queryOne(
+      const contagem = await queryOne(
         'SELECT COUNT(*) AS total FROM bilhetes WHERE rifa_id = $1',
         [rifa_id]
-      );
+    );
+      const total = parseInt(contagem?.total || 0);
       if (parseInt(total) + quantidade > rifa.meta_bilhetes) {
         return res.status(400).json({
           erro: `Só restam ${rifa.meta_bilhetes - parseInt(total)} bilhetes disponíveis`,
