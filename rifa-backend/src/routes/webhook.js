@@ -8,6 +8,10 @@ const { _confirmarPedido }  = require('./pedidos');
 
 const router = express.Router();
 
+router.post('/', (req, res) => {
+  res.sendStatus(200);
+});
+
 // POST /api/webhook/pix
 // O EFI Bank chama esta rota automaticamente quando um PIX é pago
 router.post('/pix', async (req, res) => {
