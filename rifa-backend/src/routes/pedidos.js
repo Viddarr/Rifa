@@ -160,8 +160,8 @@ router.patch('/:id/cancelar', authMiddleware, async (req, res) => {
 async function _confirmarPedido(pedido_id, rifa_id, quantidade) {
   await transaction(async (client) => {
     // 1. Marca pedido como pago
-    await client.query(
-      "UPDATE pedidos SET status = 'pago', pago_em = NOW() WHERE id = $1",
+    const { rows: [pedido] } = await client.query(
+      "UPDATE pedidos SET status = 'pago', pago_em = NOW() WHERE id = $1 RETURNING *",
       [pedido_id]
     );
 
@@ -172,7 +172,38 @@ async function _confirmarPedido(pedido_id, rifa_id, quantidade) {
         [rifa_id, pedido_id]
       );
     }
+
+    // 3. Calcula giros da roleta ganhos nesta compra
+    const { rows: [config] } = await client.query(
+      'SELECT * FROM roleta_config WHERE rifa_id = $1 AND ativo = true',
+      [rifa_id]
+    );
+
+    if (config && config.bilhetes_por_giro > 0) {
+      const girosGanhos = Math.floor(quantidade / config.bilhetes_por_giro);
+
+      if (girosGanhos > 0) {
+        await client.query(`
+          INSERT INTO roleta_giros (rifa_id, participante_id, giros_ganhos)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (rifa_id, participante_id)
+          DO UPDATE SET giros_ganhos = roleta_giros.giros_ganhos + $3
+        `, [rifa_id, pedido.participante_id, girosGanhos]);
+      }
+    }
+
+    // 4. Verifica marcos garantidos (prêmio automático sem sorteio)
+    const { rows: marcos } = await client.query(
+      'SELECT * FROM roleta_marcos_garantidos WHERE rifa_id = $1 AND quantidade_minima <= $2 ORDER BY quantidade_minima DESC LIMIT 1',
+      [rifa_id, quantidade]
+    );
+
+    if (marcos.length > 0) {
+      await client.query(`
+        INSERT INTO roleta_resultados (rifa_id, participante_id, tipo, premio_nome)
+        VALUES ($1, $2, 'garantido', $3)
+      `, [rifa_id, pedido.participante_id, marcos[0].premio_descricao]);
+    }
   });
 }
-
 module.exports = { router, _confirmarPedido };

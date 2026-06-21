@@ -124,6 +124,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 /* Seletor de quantidade estilo card ── */
 #qtd-section{margin-bottom:32px;}
 #qtd-title{font-family:var(--fc);font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--green);margin-bottom:14px;text-align:center;}
+.titulo-roleta-info{font-family:var(--fc);font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--green);margin-bottom:14px;text-align:center;}
 #qtd-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;}
 .qtd-card{aspect-ratio:1;background:var(--dark4);border:1px solid rgba(255,255,255,0.08);color:var(--gray);font-family:var(--fd);font-size:22px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;border-radius:3px;flex-direction:column;gap:0;}
 .qtd-card span.sub{font-family:var(--fc);font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gray-d);}
@@ -236,6 +237,118 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   #hero-stats{flex-direction:column;gap:0;border:none;}
   .hst{border-right:none;border-bottom:1px solid rgba(255,255,255,0.08);}
   #qtd-cards{grid-template-columns:repeat(5,1fr);}
+  #roleta-wheel-wrap{width:240px;height:240px;}
+}
+
+/* ══════════════════════════════════════
+   ROLETA — botão flutuante
+══════════════════════════════════════ */
+#roleta-fab{
+  position:fixed;bottom:24px;right:24px;z-index:150;
+  background:linear-gradient(135deg,var(--green-dark),var(--green));
+  color:#fff;border:none;border-radius:50px;
+  padding:14px 22px;display:none;align-items:center;gap:10px;
+  font-family:var(--fc);font-size:14px;font-weight:700;letter-spacing:1px;
+  box-shadow:0 6px 24px rgba(34,197,94,0.4);cursor:pointer;
+  animation:fabPulse 2.4s infinite;
+}
+#roleta-fab.visivel{display:flex;}
+#roleta-fab-icon{font-size:22px;}
+#roleta-fab-count{
+  background:rgba(255,255,255,0.25);border-radius:50%;
+  width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-size:13px;
+}
+@keyframes fabPulse{
+  0%,100%{box-shadow:0 6px 24px rgba(34,197,94,0.4);}
+  50%{box-shadow:0 6px 32px rgba(34,197,94,0.7);}
+}
+
+/* ══════════════════════════════════════
+   ROLETA — banner pós-pagamento
+══════════════════════════════════════ */
+#roleta-banner{
+  position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-120%);
+  background:var(--dark3);border:1px solid rgba(34,197,94,0.4);border-left:4px solid var(--green);
+  padding:16px 22px;z-index:160;display:flex;align-items:center;gap:16px;
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1);max-width:90vw;
+}
+#roleta-banner.visivel{transform:translateX(-50%) translateY(0);}
+#roleta-banner-text{font-family:var(--fc);font-size:14px;color:var(--off);}
+#roleta-banner-text strong{color:var(--green);}
+#roleta-banner-btn{
+  background:var(--green);color:#000;border:none;padding:8px 18px;
+  font-family:var(--fc);font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;
+  cursor:pointer;white-space:nowrap;
+}
+
+/* ══════════════════════════════════════
+   ROLETA — modal principal
+══════════════════════════════════════ */
+#roleta-overlay{
+  position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.92);backdrop-filter:blur(10px);
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+#roleta-overlay.ativo{display:flex;}
+#roleta-modal{
+  background:var(--dark2);border:1px solid rgba(34,197,94,0.3);border-top:3px solid var(--green);
+  max-width:420px;width:100%;padding:28px 24px;text-align:center;position:relative;
+}
+#roleta-modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;}
+#roleta-titulo{font-family:var(--fd);font-size:26px;letter-spacing:2px;margin-bottom:4px;}
+#roleta-sub{font-family:var(--fc);font-size:12px;color:var(--gray);margin-bottom:20px;}
+#roleta-giros-disp{color:var(--green);font-weight:700;}
+
+#roleta-wheel-wrap{position:relative;width:280px;height:280px;margin:0 auto 24px;}
+#roleta-canvas{display:block;filter:drop-shadow(0 6px 24px rgba(0,0,0,0.6));}
+#roleta-ponteiro{
+  position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;
+  border-top:24px solid var(--red-hot);z-index:5;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+#roleta-centro{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:52px;height:52px;border-radius:50%;
+  background:radial-gradient(circle,var(--green-hot),var(--green-dark));
+  border:3px solid var(--dark2);display:flex;align-items:center;justify-content:center;
+  font-size:22px;z-index:4;
+}
+
+#btn-girar{
+  width:100%;font-family:var(--fd);font-size:18px;letter-spacing:3px;
+  background:var(--green);color:#000;border:none;padding:16px;cursor:pointer;
+  clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);transition:all .3s;
+}
+#btn-girar:hover:not(:disabled){background:var(--green-hot);transform:translateY(-2px);}
+#btn-girar:disabled{background:var(--dark4);color:var(--gray-d);cursor:not-allowed;}
+
+#roleta-form-telefone{margin-bottom:16px;}
+#roleta-form-telefone .fi{text-align:center;}
+
+/* ══════════════════════════════════════
+   ROLETA — modal de resultado
+══════════════════════════════════════ */
+#roleta-resultado-overlay{
+  position:fixed;inset:0;z-index:450;background:rgba(0,0,0,0.94);backdrop-filter:blur(12px);
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+#roleta-resultado-overlay.ativo{display:flex;}
+#roleta-resultado-modal{
+  background:var(--dark2);border:1px solid rgba(34,197,94,0.4);border-top:3px solid var(--green);
+  max-width:380px;width:100%;padding:36px 28px;text-align:center;
+  animation:resultPop .5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes resultPop{
+  0%{transform:scale(.7);opacity:0;}
+  100%{transform:scale(1);opacity:1;}
+}
+#roleta-resultado-icon{font-size:54px;margin-bottom:10px;}
+#roleta-resultado-titulo{font-family:var(--fd);font-size:22px;color:var(--green);letter-spacing:1px;margin-bottom:6px;}
+#roleta-resultado-premio{font-family:var(--fd);font-size:32px;letter-spacing:1px;margin-bottom:18px;}
+#roleta-resultado-nota{font-family:var(--fb);font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:20px;}
+#btn-fechar-resultado{
+  background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--off);
+  padding:10px 28px;font-family:var(--fc);font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
 }
 </style>
 </head>
@@ -355,6 +468,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 
   <!-- Seletor de quantidade -->
   <div id="qtd-section">
+    <p class="titulo-roleta-info" id="info-bilhetes-giro" style="display:none;">A CADA <span id="num-bilhetes-giro">—</span> BILHETES, VOCÊ GANHA 1 GIRO NA ROLETA!</p>
     <p id="qtd-title">Quantos bilhetes você quer?</p>
     <div id="qtd-cards">
       <button class="qtd-card" data-v="1"  onclick="selectQtd(1)">1<span class="sub">bilhete</span></button>
@@ -473,6 +587,55 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 </div>
 
 <!-- TOAST -->
+<!-- BOTÃO FLUTUANTE DA ROLETA -->
+<button id="roleta-fab">
+  <span id="roleta-fab-icon">🎡</span>
+  <span>Girar Roleta</span>
+  <span id="roleta-fab-count">0</span>
+</button>
+
+<!-- BANNER PÓS-PAGAMENTO -->
+<div id="roleta-banner">
+  <span id="roleta-banner-text">🎉 Você ganha <strong id="roleta-banner-qtd">giros na Roleta</strong> ao comprar bilhetes!</span>
+  <button id="roleta-banner-btn">Girar agora</button>
+</div>
+
+<!-- MODAL DA ROLETA -->
+<div id="roleta-overlay">
+  <div id="roleta-modal">
+    <button id="roleta-modal-close">✕</button>
+    <div id="roleta-titulo">🎡 Roleta da Sorte</div>
+    <div id="roleta-sub">Giros disponíveis: <span id="roleta-giros-disp">0</span></div>
+
+    <!-- Campo de telefone, exibido se ainda não soubermos quem é -->
+    <div id="roleta-form-telefone" style="display:none;">
+      <input class="fi" id="roleta-input-telefone" type="tel" placeholder="Seu WhatsApp usado na compra"/>
+      <button class="btn-red" id="btn-buscar-giros" style="width:100%;margin-top:10px;">Ver meus giros</button>
+    </div>
+
+    <div id="roleta-wheel-wrap">
+      <div id="roleta-ponteiro"></div>
+      <canvas id="roleta-canvas" width="280" height="280"></canvas>
+      <div id="roleta-centro">🍀</div>
+    </div>
+
+    <button id="btn-girar" disabled>GIRAR</button>
+  </div>
+</div>
+
+<!-- MODAL DE RESULTADO DA ROLETA -->
+<div id="roleta-resultado-overlay">
+  <div id="roleta-resultado-modal">
+    <div id="roleta-resultado-icon">🏆</div>
+    <div id="roleta-resultado-titulo">Parabéns!</div>
+    <div id="roleta-resultado-premio">—</div>
+    <div id="roleta-resultado-nota">
+      Fale com a gente no WhatsApp para resgatar seu prêmio.
+    </div>
+    <button id="btn-fechar-resultado">Fechar</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -494,6 +657,26 @@ const state = {
   timerInt:   null,
   pollingInt: null,
 };
+
+// ══════════════════════════════════════════════════════════════════════
+// Mudar numero
+// ══════════════════════════════════════════════════════════════════════
+async function mostrarInfoBilhetesPorGiro() {
+  try {
+    const res  = await fetch(`${API}/roleta/${RIFA_ID}`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    if (data.config && data.config.bilhetes_por_giro && data.config.ativo) {
+      R('num-bilhetes-giro').textContent = data.config.bilhetes_por_giro;
+      R('info-bilhetes-giro').style.display = 'block';
+    }
+  } catch (err) {
+    console.error('[mostrarInfoBilhetesPorGiro]', err);
+  }
+}
+
+mostrarInfoBilhetesPorGiro();
 
 // ══════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -652,6 +835,9 @@ R('btn-comprar').addEventListener('click', async () => {
   const cpf      = R('input-cpf').value.replace(/\D/g, '');
   if (!nome || !telefone || !cpf || state.qtd < 1) return;
 
+  state.telefoneComprador = telefone;   // guarda pra usar na roleta depois
+  localStorage.setItem('toprifas_telefone', telefone);
+
   setLoading(true);
 
   try {
@@ -723,6 +909,9 @@ function startPolling() {
 
         // Recarrega os dados da rifa para atualizar o progresso
         await carregarRifa();
+
+        // Verifica se ganhou giros na roleta com essa compra
+        await checarGirosRoleta(true);
       }
 
     } catch (err) {
@@ -768,8 +957,230 @@ function startTimer() {
 }
 
 // ══════════════════════════════════════════════════════════════════════
+// ROLETA DA SORTE
+// ══════════════════════════════════════════════════════════════════════
+const roleta = {
+  premios: [],
+  giros: 0,
+  girando: false,
+  anguloAtual: 0,
+};
+
+state.telefoneComprador = localStorage.getItem('toprifas_telefone') || '';
+
+const CORES_ROLETA = ['#e81414', '#22c55e', '#1a1a1a', '#16a34a', '#ff2a2a', '#0f0f0f', '#4ade80', '#9b0e0e'];
+
+// ── Carrega a configuração da roleta (prêmios) ────────────────────────
+async function carregarConfigRoleta() {
+  try {
+    const res  = await fetch(`${API}/roleta/${RIFA_ID}`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    roleta.premios = (data.premios || []).filter(p => p);
+    if (roleta.premios.length === 0) return; // sem roleta configurada nessa rifa
+
+    desenharRoleta();
+  } catch (err) {
+    console.error('[carregarConfigRoleta]', err);
+  }
+}
+
+// ── Desenha o disco no canvas ──────────────────────────────────────────
+function desenharRoleta() {
+  const canvas = R('roleta-canvas');
+  const ctx    = canvas.getContext('2d');
+  const cx = canvas.width / 2, cy = canvas.height / 2, raio = canvas.width / 2 - 4;
+  const n  = roleta.premios.length;
+  const fatia = (Math.PI * 2) / n;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  roleta.premios.forEach((p, i) => {
+    const inicio = i * fatia + roleta.anguloAtual;
+    const fim    = inicio + fatia;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, raio, inicio, fim);
+    ctx.closePath();
+    ctx.fillStyle = CORES_ROLETA[i % CORES_ROLETA.length];
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(inicio + fatia / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px Barlow Condensed, sans-serif';
+    const texto = p.nome.length > 16 ? p.nome.slice(0, 14) + '…' : p.nome;
+    ctx.fillText(texto, raio - 14, 5);
+    ctx.restore();
+  });
+}
+
+// ── Verifica quantos giros o comprador tem ──────────────────────────────
+async function checarGirosRoleta(mostrarBanner = false) {
+  if (!state.telefoneComprador) return;
+
+  try {
+    const res  = await fetch(`${API}/roleta/${RIFA_ID}/giros/${state.telefoneComprador}`);
+    const data = await res.json();
+
+    roleta.giros = data.disponiveis || 0;
+
+    R('roleta-fab-count').textContent = roleta.giros;
+    R('roleta-fab').classList.toggle('visivel', roleta.giros > 0);
+
+    if (mostrarBanner && roleta.giros > 0) {
+      R('roleta-banner-qtd').textContent = roleta.giros === 1 ? '1 giro' : `${roleta.giros} giros`;
+      R('roleta-banner').classList.add('visivel');
+      setTimeout(() => R('roleta-banner').classList.remove('visivel'), 8000);
+    }
+
+  } catch (err) {
+    console.error('[checarGirosRoleta]', err);
+  }
+}
+
+// ── Abre o modal da roleta ──────────────────────────────────────────────
+function abrirRoleta() {
+  R('roleta-overlay').classList.add('ativo');
+  R('roleta-banner').classList.remove('visivel');
+
+  if (roleta.premios.length === 0) {
+    carregarConfigRoleta();
+  } else {
+    desenharRoleta();
+  }
+
+  if (!state.telefoneComprador) {
+    R('roleta-form-telefone').style.display = 'block';
+    R('btn-girar').disabled = true;
+  } else {
+    R('roleta-form-telefone').style.display = 'none';
+    checarGirosRoleta().then(() => {
+      R('roleta-giros-disp').textContent = roleta.giros;
+      R('btn-girar').disabled = roleta.giros <= 0;
+    });
+  }
+}
+
+R('roleta-fab').addEventListener('click', abrirRoleta);
+R('roleta-banner-btn').addEventListener('click', abrirRoleta);
+R('roleta-modal-close').addEventListener('click', () => R('roleta-overlay').classList.remove('ativo'));
+
+R('btn-buscar-giros').addEventListener('click', async () => {
+  const tel = R('roleta-input-telefone').value.trim();
+  if (!tel) { showToast('Informe seu WhatsApp'); return; }
+
+  state.telefoneComprador = tel;
+  localStorage.setItem('toprifas_telefone', tel);
+
+  await checarGirosRoleta();
+  R('roleta-giros-disp').textContent = roleta.giros;
+
+  if (roleta.giros > 0) {
+    R('roleta-form-telefone').style.display = 'none';
+    R('btn-girar').disabled = false;
+  } else {
+    showToast('Nenhum giro disponível para esse número');
+  }
+});
+
+// ── Gira a roleta ────────────────────────────────────────────────────────
+R('btn-girar').addEventListener('click', async () => {
+  if (roleta.girando || roleta.giros <= 0) return;
+  roleta.girando = true;
+  R('btn-girar').disabled = true;
+  R('btn-girar').textContent = 'GIRANDO...';
+
+  try {
+    const res  = await fetch(`${API}/roleta/${RIFA_ID}/girar`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telefone: state.telefoneComprador }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast(data.erro || 'Erro ao girar');
+      roleta.girando = false;
+      R('btn-girar').disabled = false;
+      R('btn-girar').textContent = 'GIRAR';
+      return;
+    }
+
+    animarRoletaAteResultado(data.premio);
+
+  } catch (err) {
+    console.error('[girar]', err);
+    showToast('Erro de conexão');
+    roleta.girando = false;
+    R('btn-girar').disabled = false;
+    R('btn-girar').textContent = 'GIRAR';
+  }
+});
+
+// ── Anima o disco até parar no prêmio sorteado pelo backend ─────────────
+function animarRoletaAteResultado(premioGanho) {
+  const n = roleta.premios.length;
+  const fatia = (Math.PI * 2) / n;
+
+  let idx = roleta.premios.findIndex(p => p.nome === premioGanho.nome);
+  if (idx === -1) idx = 0;
+
+  const anguloAlvo = -(Math.PI / 2) - (idx * fatia + fatia / 2);
+  const voltas = 6;
+  const anguloFinal = anguloAlvo - voltas * Math.PI * 2;
+
+  const duracao = 4200;
+  const inicioAnimacao = performance.now();
+  const anguloInicial = roleta.anguloAtual;
+  const distancia = anguloFinal - anguloInicial;
+
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+  function frame(agora) {
+    const t = Math.min(1, (agora - inicioAnimacao) / duracao);
+    const eased = easeOutCubic(t);
+    roleta.anguloAtual = anguloInicial + distancia * eased;
+    desenharRoleta();
+
+    if (t < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      roleta.girando = false;
+      roleta.giros--;
+      R('roleta-fab-count').textContent = roleta.giros;
+      R('roleta-fab').classList.toggle('visivel', roleta.giros > 0);
+      mostrarResultadoRoleta(premioGanho);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+// ── Modal de resultado ────────────────────────────────────────────────
+function mostrarResultadoRoleta(premio) {
+  R('roleta-overlay').classList.remove('ativo');
+  R('roleta-resultado-premio').textContent = premio.nome;
+  R('roleta-resultado-overlay').classList.add('ativo');
+  R('btn-girar').textContent = 'GIRAR';
+  R('btn-girar').disabled = roleta.giros <= 0;
+}
+
+R('btn-fechar-resultado').addEventListener('click', () => {
+  R('roleta-resultado-overlay').classList.remove('ativo');
+});
+
+// ══════════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════════
+carregarConfigRoleta();
+if (state.telefoneComprador) checarGirosRoleta();
 carregarRifa();
 </script>
 </body>

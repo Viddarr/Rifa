@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Painel Admin — Top Rifas</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,400;0,500;0,600;0,700;0,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --red:       #e81414;
+  --red-hot:   #ff2a2a;
+  --red-dark:  #9b0e0e;
+  --green:     #22c55e;
+  --green-hot: #4ade80;
+  --green-dark:#15803d;
+  --yellow:    #eab308;
+  --purple:    #a855f7;
+  --black:     #000;
+  --dark:      #0a0a0a;
+  --dark2:     #111315;
+  --dark3:     #181b1e;
+  --dark4:     #21252a;
+  --dark5:     #2a2f35;
+  --border:    #2a2f35;
+  --white:     #f0f0f0;
+  --gray:      #8a8f96;
+  --gray-d:    #565b61;
+  --fd: 'Bebas Neue', sans-serif;
+  --fc: 'Barlow Condensed', sans-serif;
+  --fb: 'Barlow', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--dark);color:var(--white);font-family:var(--fb);min-height:100vh;}
+button{font-family:var(--fc);cursor:pointer;}
+input,select,textarea{font-family:var(--fb);}
+
+/* ══════════════ LOGIN ══════════════ */
+#login-screen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse 60% 50% at 50% 30%,rgba(232,20,20,0.08) 0%,transparent 70%),var(--dark);
+}
+#login-box{
+  background:var(--dark2);border:1px solid var(--border);border-top:3px solid var(--red);
+  padding:44px 38px;width:100%;max-width:380px;
+}
+#login-logo{font-family:var(--fd);font-size:32px;text-align:center;margin-bottom:4px;}
+#login-logo .r{color:var(--red);}
+#login-sub{font-family:var(--fc);font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--green);text-align:center;margin-bottom:32px;}
+.login-fg{margin-bottom:18px;}
+.login-label{font-family:var(--fc);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:6px;}
+.login-input{
+  width:100%;background:var(--dark3);border:1px solid var(--border);border-bottom:2px solid var(--red-dark);
+  color:var(--white);font-size:15px;padding:12px 14px;outline:none;transition:.2s;
+}
+.login-input:focus{border-color:var(--gray-d);border-bottom-color:var(--red);}
+#login-btn{
+  width:100%;background:var(--red);color:#fff;border:none;padding:14px;
+  font-family:var(--fd);font-size:16px;letter-spacing:3px;margin-top:8px;transition:.2s;
+}
+#login-btn:hover{background:var(--red-hot);}
+#login-error{color:var(--red-hot);font-family:var(--fc);font-size:12px;margin-top:14px;text-align:center;display:none;}
+
+/* ══════════════ APP SHELL ══════════════ */
+#app{display:none;min-height:100vh;}
+#app.ativo{display:flex;}
+
+#sidebar{
+  width:220px;background:var(--dark2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;
+}
+#sidebar-logo{padding:24px 20px;border-bottom:1px solid var(--border);}
+#sidebar-logo .name{font-family:var(--fd);font-size:24px;}
+#sidebar-logo .name .r{color:var(--red);}
+#sidebar-logo .sub{font-family:var(--fc);font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--green);margin-top:2px;}
+
+#sidebar-nav{flex:1;padding:16px 0;overflow-y:auto;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:12px 20px;
+  font-family:var(--fc);font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;
+  color:var(--gray);border-left:3px solid transparent;cursor:pointer;transition:.2s;
+}
+.nav-item:hover{color:var(--white);background:rgba(255,255,255,0.02);}
+.nav-item.ativo{color:var(--red-hot);border-left-color:var(--red);background:rgba(232,20,20,0.06);}
+
+#sidebar-footer{padding:16px 20px;border-top:1px solid var(--border);}
+#admin-nome{font-family:var(--fc);font-size:12px;color:var(--gray);margin-bottom:10px;}
+#btn-logout{
+  width:100%;background:transparent;border:1px solid var(--border);color:var(--gray);
+  padding:8px;font-family:var(--fc);font-size:11px;letter-spacing:2px;text-transform:uppercase;transition:.2s;
+}
+#btn-logout:hover{border-color:var(--red);color:var(--red-hot);}
+
+#main{flex:1;padding:32px 40px;overflow-y:auto;max-height:100vh;}
+
+.page{display:none;}
+.page.ativo{display:block;}
+
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
+.page-title{font-family:var(--fd);font-size:32px;letter-spacing:2px;}
+.page-title .r{color:var(--red);}
+.page-title .g{color:var(--green);}
+.page-title .p{color:var(--purple);}
+
+.btn-primary{
+  background:var(--red);color:#fff;border:none;padding:11px 24px;
+  font-family:var(--fc);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);transition:.2s;
+}
+.btn-primary:hover{background:var(--red-hot);}
+.btn-secondary{
+  background:transparent;color:var(--green);border:1px solid var(--green-dark);padding:10px 20px;
+  font-family:var(--fc);font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;transition:.2s;
+}
+.btn-secondary:hover{background:rgba(34,197,94,0.08);border-color:var(--green);}
+.btn-purple{
+  background:transparent;color:var(--purple);border:1px solid #7e22ce;padding:8px 16px;
+  font-family:var(--fc);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;transition:.2s;
+}
+.btn-purple:hover{background:rgba(168,85,247,0.1);}
+.btn-danger{
+  background:transparent;color:var(--red-hot);border:1px solid var(--red-dark);padding:8px 16px;
+  font-family:var(--fc);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;transition:.2s;
+}
+.btn-danger:hover{background:rgba(232,20,20,0.08);}
+.btn-small{
+  background:var(--dark4);color:var(--gray);border:1px solid var(--border);padding:6px 14px;
+  font-family:var(--fc);font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;transition:.2s;
+}
+.btn-small:hover{color:var(--white);border-color:var(--gray-d);}
+.btn-x{background:none;border:none;color:var(--gray);font-size:16px;padding:4px 8px;transition:.2s;}
+.btn-x:hover{color:var(--red-hot);}
+
+/* ── Dashboard cards ── */
+#stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px;}
+.stat-card{background:var(--dark2);border:1px solid var(--border);border-left:3px solid var(--red);padding:20px 22px;}
+.stat-card.green{border-left-color:var(--green);}
+.stat-value{font-family:var(--fd);font-size:34px;line-height:1;margin-bottom:4px;}
+.stat-label{font-family:var(--fc);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);}
+
+.section-title{font-family:var(--fd);font-size:20px;letter-spacing:1px;margin:28px 0 14px;display:flex;align-items:center;gap:10px;}
+
+/* ── Tables ── */
+.table-wrap{background:var(--dark2);border:1px solid var(--border);overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{
+  text-align:left;padding:12px 16px;font-family:var(--fc);font-size:11px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;color:var(--gray);background:var(--dark3);
+  border-bottom:1px solid var(--border);white-space:nowrap;
+}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border);color:var(--white);white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+
+.badge{
+  display:inline-block;padding:3px 10px;font-family:var(--fc);font-size:10px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;border-radius:2px;
+}
+.badge.ativa,.badge.pago{background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.3);}
+.badge.pendente{background:rgba(234,179,8,0.12);color:var(--yellow);border:1px solid rgba(234,179,8,0.3);}
+.badge.encerrada,.badge.cancelado{background:rgba(138,143,150,0.12);color:var(--gray);border:1px solid var(--border);}
+.badge.sorteada{background:rgba(232,20,20,0.12);color:var(--red-hot);border:1px solid rgba(232,20,20,0.3);}
+
+/* ── Rifa cards ── */
+#rifas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+.rifa-card{background:var(--dark2);border:1px solid var(--border);padding:20px;}
+.rifa-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.rifa-card-title{font-family:var(--fd);font-size:18px;letter-spacing:1px;}
+.rifa-card-info{font-family:var(--fc);font-size:12px;color:var(--gray);margin-bottom:14px;}
+.rifa-card-progress-track{height:6px;background:var(--dark4);margin-bottom:6px;}
+.rifa-card-progress-fill{height:100%;background:linear-gradient(to right,var(--red-dark),var(--red-hot));}
+.rifa-card-meta{display:flex;justify-content:space-between;font-family:var(--fc);font-size:11px;color:var(--gray);margin-bottom:16px;}
+.rifa-card-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:300;padding:20px;}
+.modal-overlay.ativo{display:flex;}
+.modal{background:var(--dark2);border:1px solid var(--border);border-top:3px solid var(--red);max-width:560px;width:100%;max-height:90vh;overflow-y:auto;padding:32px;}
+.modal.purple{border-top-color:var(--purple);}
+.modal-title{font-family:var(--fd);font-size:22px;letter-spacing:1px;margin-bottom:20px;}
+.modal-close{float:right;background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;}
+.fg{margin-bottom:16px;}
+.fl{font-family:var(--fc);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--green);display:block;margin-bottom:6px;}
+.fl.p{color:var(--purple);}
+.fi{width:100%;background:var(--dark3);border:1px solid var(--border);border-bottom:2px solid var(--red-dark);color:var(--white);font-size:14px;padding:10px 12px;outline:none;}
+textarea.fi{resize:vertical;min-height:70px;font-family:var(--fb);}
+.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fg-row3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;}
+.premio-row{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;margin-bottom:10px;}
+.premio-num{font-family:var(--fd);font-size:18px;color:var(--gray);padding-top:8px;}
+
+.divider{height:1px;background:var(--border);margin:24px 0;}
+
+/* ── Roleta list items ── */
+.roleta-item{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  background:var(--dark3);border:1px solid var(--border);padding:10px 14px;margin-bottom:8px;
+}
+.roleta-item-info{flex:1;}
+.roleta-item-nome{font-family:var(--fb);font-size:14px;font-weight:600;}
+.roleta-item-meta{font-family:var(--fc);font-size:11px;color:var(--gray);}
+.roleta-item-prob{font-family:var(--fd);font-size:18px;color:var(--purple);min-width:50px;text-align:right;}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--dark3);border:1px solid var(--border);border-left:3px solid var(--green);padding:14px 24px;font-family:var(--fc);font-size:13px;z-index:500;transition:.35s;white-space:nowrap;}
+#toast.erro{border-left-color:var(--red);}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+.empty-state{padding:40px;text-align:center;color:var(--gray);font-family:var(--fc);font-size:13px;letter-spacing:1px;text-transform:uppercase;}
+
+@media (max-width:800px){
+  #sidebar{width:64px;}
+  #sidebar-logo .name,#sidebar-logo .sub,.nav-item span.label,#admin-nome,#btn-logout span.label{display:none;}
+  #main{padding:20px;}
+  .fg-row,.fg-row3{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div id="login-screen">
+  <div id="login-box">
+    <div id="login-logo"><span style="color:var(--white)">top</span><span class="r">rifas</span> 🍀</div>
+    <div id="login-sub">Painel Administrativo</div>
+
+    <div class="login-fg">
+      <label class="login-label">E-mail</label>
+      <input class="login-input" id="login-email" type="email" placeholder="admin@toprifas.com"/>
+    </div>
+    <div class="login-fg">
+      <label class="login-label">Senha</label>
+      <input class="login-input" id="login-senha" type="password" placeholder="••••••••"/>
+    </div>
+    <button id="login-btn">ENTRAR</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- ══════════ APP ══════════ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div id="sidebar-logo">
+      <div class="name"><span style="color:var(--white)">top</span><span class="r">rifas</span></div>
+      <div class="sub">Admin</div>
+    </div>
+
+    <nav id="sidebar-nav">
+      <div class="nav-item ativo" data-page="dashboard">📊 <span class="label">Dashboard</span></div>
+      <div class="nav-item" data-page="rifas">🎟️ <span class="label">Rifas</span></div>
+      <div class="nav-item" data-page="pedidos">💳 <span class="label">Pedidos</span></div>
+    </nav>
+
+    <div id="sidebar-footer">
+      <div id="admin-nome">—</div>
+      <button id="btn-logout">SAIR <span class="label"></span></button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="main">
+
+    <!-- PAGE: DASHBOARD -->
+    <section class="page ativo" id="page-dashboard">
+      <div class="page-header">
+        <h1 class="page-title">📊 <span class="r">Dashboard</span></h1>
+      </div>
+
+      <div id="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-rifas-ativas">—</div>
+          <div class="stat-label">Rifas Ativas</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-value" id="stat-rifas-sorteadas">—</div>
+          <div class="stat-label">Rifas Sorteadas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total-bilhetes">—</div>
+          <div class="stat-label">Bilhetes Vendidos</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-value" id="stat-total-arrecadado">—</div>
+          <div class="stat-label">Total Arrecadado</div>
+        </div>
+      </div>
+
+      <div class="section-title">Rifas Ativas</div>
+      <div id="dash-rifas-ativas" class="table-wrap"></div>
+
+      <div class="section-title">Últimos Pedidos</div>
+      <div id="dash-ultimos-pedidos" class="table-wrap"></div>
+    </section>
+
+    <!-- PAGE: RIFAS -->
+    <section class="page" id="page-rifas">
+      <div class="page-header">
+        <h1 class="page-title">🎟️ <span class="r">Rifas</span></h1>
+        <button class="btn-primary" id="btn-nova-rifa">+ Nova Rifa</button>
+      </div>
+
+      <div id="rifas-grid"></div>
+    </section>
+
+    <!-- PAGE: PEDIDOS (participantes de uma rifa) -->
+    <section class="page" id="page-pedidos">
+      <div class="page-header">
+        <h1 class="page-title">💳 <span class="r" id="pedidos-rifa-titulo">Pedidos</span></h1>
+        <button class="btn-secondary" id="btn-voltar-rifas">← Voltar</button>
+      </div>
+
+      <div id="pedidos-table" class="table-wrap"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══════════ MODAL: NOVA RIFA ══════════ -->
+<div class="modal-overlay" id="modal-nova-rifa">
+  <div class="modal">
+    <button class="modal-close" id="modal-nova-rifa-close">✕</button>
+    <div class="modal-title">Nova Rifa</div>
+
+    <div class="fg">
+      <label class="fl">Título</label>
+      <input class="fi" id="nr-titulo" placeholder="Ex: Rifa Top Rifas"/>
+    </div>
+    <div class="fg">
+      <label class="fl">Descrição</label>
+      <textarea class="fi" id="nr-descricao" placeholder="Descrição da rifa"></textarea>
+    </div>
+    <div class="fg-row">
+      <div class="fg">
+        <label class="fl">Preço por bilhete (R$)</label>
+        <input class="fi" id="nr-preco" type="number" step="0.01" placeholder="10.00"/>
+      </div>
+      <div class="fg">
+        <label class="fl">Total de bilhetes</label>
+        <input class="fi" id="nr-meta" type="number" placeholder="100"/>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Data do sorteio</label>
+      <input class="fi" id="nr-data" type="date"/>
+    </div>
+
+    <label class="fl" style="margin-top:8px;">Prêmios</label>
+    <div class="premio-row">
+      <div class="premio-num">1º</div>
+      <input class="fi" id="nr-premio1" placeholder="Descrição do 1º prêmio"/>
+    </div>
+    <div class="premio-row">
+      <div class="premio-num">2º</div>
+      <input class="fi" id="nr-premio2" placeholder="Descrição do 2º prêmio (opcional)"/>
+    </div>
+    <div class="premio-row">
+      <div class="premio-num">3º</div>
+      <input class="fi" id="nr-premio3" placeholder="Descrição do 3º prêmio (opcional)"/>
+    </div>
+
+    <button class="btn-primary" id="btn-salvar-rifa" style="width:100%;margin-top:18px;">CRIAR RIFA</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: EDITAR RIFA (inclui preço) ══════════ -->
+<div class="modal-overlay" id="modal-editar-rifa">
+  <div class="modal">
+    <button class="modal-close" id="modal-editar-rifa-close">✕</button>
+    <div class="modal-title">Editar Rifa</div>
+    <input type="hidden" id="er-id"/>
+
+    <div class="fg">
+      <label class="fl">Título</label>
+      <input class="fi" id="er-titulo"/>
+    </div>
+    <div class="fg">
+      <label class="fl">Descrição</label>
+      <textarea class="fi" id="er-descricao"></textarea>
+    </div>
+    <div class="fg-row">
+      <div class="fg">
+        <label class="fl">Preço por bilhete (R$)</label>
+        <input class="fi" id="er-preco" type="number" step="0.01"/>
+      </div>
+      <div class="fg">
+        <label class="fl">Total de bilhetes</label>
+        <input class="fi" id="er-meta" type="number"/>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Data do sorteio</label>
+      <input class="fi" id="er-data" type="date"/>
+    </div>
+    <div id="er-aviso" style="display:none;background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);color:var(--yellow);padding:10px 14px;font-family:var(--fc);font-size:12px;margin-bottom:14px;"></div>
+
+    <button class="btn-primary" id="btn-salvar-edicao" style="width:100%;">SALVAR ALTERAÇÕES</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: ROLETA ══════════ -->
+<div class="modal-overlay" id="modal-roleta">
+  <div class="modal purple">
+    <button class="modal-close" id="modal-roleta-close">✕</button>
+    <div class="modal-title">🎡 Configurar Roleta</div>
+    <input type="hidden" id="rl-rifa-id"/>
+
+    <div class="fg">
+      <label class="fl p">A cada quantos bilhetes = 1 giro?</label>
+      <input class="fi" id="rl-bilhetes-por-giro" type="number" placeholder="5"/>
+    </div>
+    <button class="btn-purple" id="btn-salvar-config-roleta" style="width:100%;margin-bottom:8px;">Salvar Configuração</button>
+
+    <div class="divider"></div>
+
+    <div class="section-title" style="margin-top:0;font-size:16px;">Prêmios da Roleta</div>
+    <div id="rl-premios-lista"></div>
+
+    <div class="fg-row3" style="margin-top:14px;">
+      <input class="fi" id="rl-premio-nome" placeholder="Nome do prêmio"/>
+      <input class="fi" id="rl-premio-prob" type="number" step="0.1" placeholder="% chance"/>
+      <input class="fi" id="rl-premio-estoque" type="number" placeholder="Estoque (opc.)"/>
+    </div>
+    <button class="btn-purple" id="btn-add-premio-roleta" style="width:100%;margin-top:8px;">+ Adicionar Prêmio</button>
+    <div id="rl-soma-prob" style="font-family:var(--fc);font-size:11px;color:var(--gray);margin-top:8px;text-align:center;"></div>
+
+    <div class="divider"></div>
+
+    <div class="section-title" style="margin-top:0;font-size:16px;">Marcos Garantidos</div>
+    <p style="font-family:var(--fb);font-size:12px;color:var(--gray);margin-bottom:12px;">
+      Prêmio automático (sem sorteio) ao comprar X bilhetes de uma vez.
+    </p>
+    <div id="rl-marcos-lista"></div>
+
+    <div class="fg-row" style="margin-top:14px;">
+      <input class="fi" id="rl-marco-qtd" type="number" placeholder="Qtd. mínima de bilhetes"/>
+      <input class="fi" id="rl-marco-premio" placeholder="Prêmio garantido"/>
+    </div>
+    <button class="btn-purple" id="btn-add-marco-roleta" style="width:100%;margin-top:8px;">+ Adicionar Marco</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: CONFIRMAR SORTEIO ══════════ -->
+<div class="modal-overlay" id="modal-sorteio">
+  <div class="modal" style="max-width:420px;text-align:center;">
+    <button class="modal-close" id="modal-sorteio-close">✕</button>
+    <div class="modal-title">🍀 Realizar Sorteio</div>
+    <p style="font-family:var(--fb);color:var(--gray);margin-bottom:20px;font-size:14px;">
+      Essa ação é <strong style="color:var(--red-hot)">irreversível</strong>. O sistema vai sortear
+      aleatoriamente entre todos os bilhetes pagos. Confirma?
+    </p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn-secondary" id="btn-cancelar-sorteio">Cancelar</button>
+      <button class="btn-primary" id="btn-confirmar-sorteio">Sim, Sortear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: RESULTADO DO SORTEIO ══════════ -->
+<div class="modal-overlay" id="modal-resultado">
+  <div class="modal" style="max-width:420px;text-align:center;">
+    <button class="modal-close" id="modal-resultado-close">✕</button>
+    <div style="font-size:40px;margin-bottom:10px;">🏆</div>
+    <div class="modal-title">Temos um Ganhador!</div>
+    <div id="resultado-nome" style="font-family:var(--fd);font-size:26px;color:var(--green);margin-bottom:6px;"></div>
+    <div id="resultado-telefone" style="font-family:var(--fc);color:var(--gray);font-size:14px;"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════
+// CONFIGURAÇÃO — em produção troque pela URL do Railway
+// ══════════════════════════════════════════════════════════════════════
+const API = 'http://localhost:3001/api';
+
+const R = id => document.getElementById(id);
+const fmt = v => 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+
+let token = localStorage.getItem('admin_token') || null;
+let rifaAtualId = null;     // rifa selecionada para ver pedidos
+let rifaParaSortear = null;
+let rifaRoletaId = null;    // rifa sendo configurada na roleta
+
+function showToast(msg, erro = false) {
+  const t = R('toast');
+  t.textContent = msg;
+  t.className = erro ? 'erro' : '';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// FETCH AUTENTICADO
+// ══════════════════════════════════════════════════════════════════════
+async function apiFetch(path, options = {}) {
+  const res = await fetch(`${API}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  if (res.status === 401) {
+    logout();
+    throw new Error('Sessão expirada');
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.erro || 'Erro na requisição');
+  return data;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// LOGIN / LOGOUT
+// ══════════════════════════════════════════════════════════════════════
+R('login-btn').addEventListener('click', async () => {
+  const email = R('login-email').value.trim();
+  const senha = R('login-senha').value;
+  R('login-error').style.display = 'none';
+
+  try {
+    const data = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha }),
+    }).then(r => r.json());
+
+    if (!data.token) throw new Error(data.erro || 'Credenciais inválidas');
+
+    token = data.token;
+    localStorage.setItem('admin_token', token);
+    localStorage.setItem('admin_nome', data.admin.nome);
+    entrarNoApp(data.admin.nome);
+
+  } catch (e) {
+    R('login-error').textContent = e.message;
+    R('login-error').style.display = 'block';
+  }
+});
+
+R('login-senha').addEventListener('keydown', e => { if (e.key === 'Enter') R('login-btn').click(); });
+
+function logout() {
+  token = null;
+  localStorage.removeItem('admin_token');
+  localStorage.removeItem('admin_nome');
+  R('app').classList.remove('ativo');
+  R('login-screen').style.display = 'flex';
+}
+R('btn-logout').addEventListener('click', logout);
+
+function entrarNoApp(nome) {
+  R('login-screen').style.display = 'none';
+  R('app').classList.add('ativo');
+  R('admin-nome').textContent = nome;
+  carregarDashboard();
+}
+
+if (token) {
+  const nome = localStorage.getItem('admin_nome') || 'Admin';
+  entrarNoApp(nome);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// NAVEGAÇÃO ENTRE PÁGINAS
+// ══════════════════════════════════════════════════════════════════════
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => irParaPagina(item.dataset.page));
+});
+
+function irParaPagina(nome) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('ativo'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('ativo'));
+  R(`page-${nome}`).classList.add('ativo');
+  const navItem = document.querySelector(`.nav-item[data-page="${nome}"]`);
+  if (navItem) navItem.classList.add('ativo');
+
+  if (nome === 'dashboard') carregarDashboard();
+  if (nome === 'rifas')     carregarRifas();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════════════════════
+async function carregarDashboard() {
+  try {
+    const { resumo, rifasAtivas, ultimosPedidos } = await apiFetch('/dashboard');
+
+    R('stat-rifas-ativas').textContent     = resumo.rifas_ativas || 0;
+    R('stat-rifas-sorteadas').textContent  = resumo.rifas_sorteadas || 0;
+    R('stat-total-bilhetes').textContent   = resumo.total_bilhetes || 0;
+    R('stat-total-arrecadado').textContent = fmt(resumo.total_arrecadado);
+
+    if (rifasAtivas.length === 0) {
+      R('dash-rifas-ativas').innerHTML = '<div class="empty-state">Nenhuma rifa ativa</div>';
+    } else {
+      R('dash-rifas-ativas').innerHTML = `
+        <table>
+          <thead><tr><th>Título</th><th>Preço</th><th>Vendidos</th><th>Arrecadado</th><th>Sorteio</th></tr></thead>
+          <tbody>
+            ${rifasAtivas.map(r => `
+              <tr>
+                <td>${r.titulo}</td>
+                <td>${fmt(r.preco_bilhete)}</td>
+                <td>${r.bilhetes_vendidos || 0}${r.meta_bilhetes ? ' / ' + r.meta_bilhetes : ''}</td>
+                <td>${fmt(r.arrecadado)}</td>
+                <td>${r.data_sorteio ? new Date(r.data_sorteio).toLocaleDateString('pt-BR') : '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    if (ultimosPedidos.length === 0) {
+      R('dash-ultimos-pedidos').innerHTML = '<div class="empty-state">Nenhum pedido ainda</div>';
+    } else {
+      R('dash-ultimos-pedidos').innerHTML = `
+        <table>
+          <thead><tr><th>Nome</th><th>Rifa</th><th>Qtd</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead>
+          <tbody>
+            ${ultimosPedidos.map(p => `
+              <tr>
+                <td>${p.nome}</td>
+                <td>${p.rifa_titulo}</td>
+                <td>${p.quantidade}</td>
+                <td>${fmt(p.valor_total)}</td>
+                <td><span class="badge ${p.status}">${p.status}</span></td>
+                <td>${new Date(p.criado_em).toLocaleString('pt-BR')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    }
+
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// RIFAS — listagem
+// ══════════════════════════════════════════════════════════════════════
+async function carregarRifas() {
+  try {
+    const rifas = await apiFetch('/rifas/admin/todas');
+
+    if (rifas.length === 0) {
+      R('rifas-grid').innerHTML = '<div class="empty-state">Nenhuma rifa criada ainda</div>';
+      return;
+    }
+
+    R('rifas-grid').innerHTML = rifas.map(r => {
+      const vendidos = parseInt(r.total_bilhetes_vendidos) || 0;
+      const pct = r.meta_bilhetes ? Math.min(100, Math.round((vendidos / r.meta_bilhetes) * 100)) : 0;
+      const tituloEsc = r.titulo.replace(/'/g, "\\'");
+
+      return `
+        <div class="rifa-card">
+          <div class="rifa-card-top">
+            <div class="rifa-card-title">${r.titulo}</div>
+            <span class="badge ${r.status}">${r.status}</span>
+          </div>
+          <div class="rifa-card-info">${fmt(r.preco_bilhete)} / bilhete · Sorteio: ${r.data_sorteio ? new Date(r.data_sorteio).toLocaleDateString('pt-BR') : '—'}</div>
+          ${r.meta_bilhetes ? `
+            <div class="rifa-card-progress-track"><div class="rifa-card-progress-fill" style="width:${pct}%"></div></div>
+            <div class="rifa-card-meta"><span>${vendidos} / ${r.meta_bilhetes} vendidos</span><span>${pct}%</span></div>
+          ` : `<div class="rifa-card-meta"><span>${vendidos} vendidos</span><span>${fmt(r.total_arrecadado)}</span></div>`}
+          <div class="rifa-card-actions">
+            <button class="btn-small" onclick="verPedidos(${r.id}, '${tituloEsc}')">Pedidos</button>
+            <button class="btn-small" onclick="abrirModalEditar(${r.id})">Editar</button>
+            <button class="btn-purple" onclick="abrirModalRoleta(${r.id})">🎡 Roleta</button>
+            ${r.status === 'ativa' ? `<button class="btn-small" onclick="pausarRifa(${r.id})">⏸️ Pausar</button>` : ''}
+            ${r.status === 'pausada' ? `<button class="btn-secondary" onclick="reativarRifa(${r.id})">▶️ Reativar</button>` : ''}
+            ${r.status === 'ativa' ? `<button class="btn-small" onclick="encerrarRifa(${r.id})">Encerrar</button>` : ''}
+            ${(r.status === 'ativa' || r.status === 'encerrada') ? `<button class="btn-danger" onclick="abrirModalSorteio(${r.id})">🍀 Sortear</button>` : ''}
+            <button class="btn-danger" onclick="excluirRifa(${r.id})">🗑️ Excluir</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+async function encerrarRifa(id) {
+  if (!confirm('Encerrar esta rifa? Não será mais possível comprar bilhetes.')) return;
+  try {
+    await apiFetch(`/rifas/${id}/encerrar`, { method: 'PATCH' });
+    showToast('Rifa encerrada');
+    carregarRifas();
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MODAL: NOVA RIFA
+// ══════════════════════════════════════════════════════════════════════
+R('btn-nova-rifa').addEventListener('click', () => R('modal-nova-rifa').classList.add('ativo'));
+R('modal-nova-rifa-close').addEventListener('click', () => R('modal-nova-rifa').classList.remove('ativo'));
+
+R('btn-salvar-rifa').addEventListener('click', async () => {
+  const titulo    = R('nr-titulo').value.trim();
+  const descricao = R('nr-descricao').value.trim();
+  const preco     = parseFloat(R('nr-preco').value);
+  const meta      = parseInt(R('nr-meta').value) || null;
+  const data      = R('nr-data').value || null;
+
+  if (!titulo || !preco) {
+    showToast('Preencha pelo menos título e preço', true);
+    return;
+  }
+
+  const premios = [];
+  if (R('nr-premio1').value.trim()) premios.push({ posicao: 1, descricao: R('nr-premio1').value.trim() });
+  if (R('nr-premio2').value.trim()) premios.push({ posicao: 2, descricao: R('nr-premio2').value.trim() });
+  if (R('nr-premio3').value.trim()) premios.push({ posicao: 3, descricao: R('nr-premio3').value.trim() });
+
+  try {
+    await apiFetch('/rifas', {
+      method: 'POST',
+      body: JSON.stringify({
+        titulo, descricao,
+        preco_bilhete: preco,
+        meta_bilhetes: meta,
+        data_sorteio:  data,
+        premios,
+      }),
+    });
+
+    showToast('Rifa criada com sucesso! 🍀');
+    R('modal-nova-rifa').classList.remove('ativo');
+    ['nr-titulo','nr-descricao','nr-preco','nr-meta','nr-data','nr-premio1','nr-premio2','nr-premio3']
+      .forEach(id => R(id).value = '');
+    carregarRifas();
+
+  } catch (e) {
+    showToast(e.message, true);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// MODAL: EDITAR RIFA (inclui alterar preço)
+// ══════════════════════════════════════════════════════════════════════
+async function abrirModalEditar(id) {
+  try {
+    const rifa = await apiFetch(`/rifas/${id}`);
+    R('er-id').value        = rifa.id;
+    R('er-titulo').value    = rifa.titulo || '';
+    R('er-descricao').value = rifa.descricao || '';
+    R('er-preco').value     = rifa.preco_bilhete || '';
+    R('er-meta').value      = rifa.meta_bilhetes || '';
+    R('er-data').value      = rifa.data_sorteio ? rifa.data_sorteio.split('T')[0] : '';
+    R('er-aviso').style.display = 'none';
+    R('modal-editar-rifa').classList.add('ativo');
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+R('modal-editar-rifa-close').addEventListener('click', () => R('modal-editar-rifa').classList.remove('ativo'));
+
+R('btn-salvar-edicao').addEventListener('click', async () => {
+  const id = R('er-id').value;
+  try {
+    const atualizada = await apiFetch(`/rifas/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        titulo:        R('er-titulo').value.trim(),
+        descricao:     R('er-descricao').value.trim(),
+        preco_bilhete: parseFloat(R('er-preco').value),
+        meta_bilhetes: parseInt(R('er-meta').value) || null,
+        data_sorteio:  R('er-data').value || null,
+      }),
+    });
+
+    if (atualizada.aviso) {
+      R('er-aviso').textContent = atualizada.aviso;
+      R('er-aviso').style.display = 'block';
+    }
+
+    showToast('Rifa atualizada!');
+    setTimeout(() => {
+      R('modal-editar-rifa').classList.remove('ativo');
+      carregarRifas();
+    }, atualizada.aviso ? 1800 : 300);
+
+  } catch (e) {
+    showToast(e.message, true);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// MODAL: ROLETA
+// ══════════════════════════════════════════════════════════════════════
+async function abrirModalRoleta(rifaId) {
+  rifaRoletaId = rifaId;
+  R('rl-rifa-id').value = rifaId;
+  R('modal-roleta').classList.add('ativo');
+  await carregarRoleta(rifaId);
+}
+R('modal-roleta-close').addEventListener('click', () => R('modal-roleta').classList.remove('ativo'));
+
+async function carregarRoleta(rifaId) {
+  try {
+    const { config } = await apiFetch(`/roleta/${rifaId}`);
+    R('rl-bilhetes-por-giro').value = config?.bilhetes_por_giro || 5;
+  } catch (e) { /* sem config ainda, tudo bem */ }
+
+  await carregarPremiosRoleta(rifaId);
+  await carregarMarcosRoleta(rifaId);
+}
+
+async function carregarPremiosRoleta(rifaId) {
+  try {
+    const premios = await apiFetch(`/roleta/${rifaId}/premios/admin`);
+
+    if (premios.length === 0) {
+      R('rl-premios-lista').innerHTML = '<div class="empty-state" style="padding:16px;">Nenhum prêmio cadastrado</div>';
+      R('rl-soma-prob').textContent = '';
+      return;
+    }
+
+    R('rl-premios-lista').innerHTML = premios.map(p => `
+      <div class="roleta-item">
+        <div class="roleta-item-info">
+          <div class="roleta-item-nome">${p.nome}</div>
+          <div class="roleta-item-meta">${p.estoque !== null ? `Estoque: ${p.estoque}` : 'Estoque ilimitado'}</div>
+        </div>
+        <div class="roleta-item-prob">${parseFloat(p.probabilidade).toFixed(1)}%</div>
+        <button class="btn-x" onclick="removerPremioRoleta(${p.id})">✕</button>
+      </div>
+    `).join('');
+
+    const soma = premios.reduce((s, p) => s + parseFloat(p.probabilidade), 0);
+    R('rl-soma-prob').textContent = `Soma das probabilidades: ${soma.toFixed(1)}% ${Math.abs(soma - 100) > 0.5 ? '⚠️ deveria somar 100%' : '✅'}`;
+
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+R('btn-add-premio-roleta').addEventListener('click', async () => {
+  const nome  = R('rl-premio-nome').value.trim();
+  const prob  = parseFloat(R('rl-premio-prob').value);
+  const estoque = R('rl-premio-estoque').value ? parseInt(R('rl-premio-estoque').value) : null;
+
+  if (!nome || isNaN(prob)) {
+    showToast('Preencha nome e probabilidade', true);
+    return;
+  }
+
+  try {
+    await apiFetch(`/roleta/${rifaRoletaId}/premios`, {
+      method: 'POST',
+      body: JSON.stringify({ nome, probabilidade: prob, estoque }),
+    });
+    R('rl-premio-nome').value = '';
+    R('rl-premio-prob').value = '';
+    R('rl-premio-estoque').value = '';
+    showToast('Prêmio adicionado');
+    carregarPremiosRoleta(rifaRoletaId);
+  } catch (e) {
+    showToast(e.message, true);
+  }
+});
+
+async function removerPremioRoleta(id) {
+  if (!confirm('Remover este prêmio da roleta?')) return;
+  try {
+    await apiFetch(`/roleta/premios/${id}`, { method: 'DELETE' });
+    showToast('Prêmio removido');
+    carregarPremiosRoleta(rifaRoletaId);
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+R('btn-salvar-config-roleta').addEventListener('click', async () => {
+  const bilhetes = parseInt(R('rl-bilhetes-por-giro').value);
+  if (!bilhetes || bilhetes < 1) {
+    showToast('Informe um número válido de bilhetes por giro', true);
+    return;
+  }
+  try {
+    await apiFetch(`/roleta/${rifaRoletaId}/config`, {
+      method: 'PUT',
+      body: JSON.stringify({ bilhetes_por_giro: bilhetes, ativo: true }),
+    });
+    showToast('Configuração salva!');
+  } catch (e) {
+    showToast(e.message, true);
+  }
+});
+
+async function carregarMarcosRoleta(rifaId) {
+  try {
+    const { marcos } = await apiFetch(`/roleta/${rifaId}`);
+
+    if (!marcos || marcos.length === 0) {
+      R('rl-marcos-lista').innerHTML = '<div class="empty-state" style="padding:16px;">Nenhum marco cadastrado</div>';
+      return;
+    }
+
+    R('rl-marcos-lista').innerHTML = marcos.map(m => `
+      <div class="roleta-item">
+        <div class="roleta-item-info">
+          <div class="roleta-item-nome">${m.premio_descricao}</div>
+          <div class="roleta-item-meta">A partir de ${m.quantidade_minima} bilhetes na compra</div>
+        </div>
+      </div>
+    `).join('');
+
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+R('btn-add-marco-roleta').addEventListener('click', async () => {
+  const qtd    = parseInt(R('rl-marco-qtd').value);
+  const premio = R('rl-marco-premio').value.trim();
+
+  if (!qtd || !premio) {
+    showToast('Preencha quantidade e prêmio', true);
+    return;
+  }
+
+  try {
+    await apiFetch(`/roleta/${rifaRoletaId}/marcos`, {
+      method: 'POST',
+      body: JSON.stringify({ quantidade_minima: qtd, premio_descricao: premio }),
+    });
+    R('rl-marco-qtd').value = '';
+    R('rl-marco-premio').value = '';
+    showToast('Marco adicionado');
+    carregarMarcosRoleta(rifaRoletaId);
+  } catch (e) {
+    showToast(e.message, true);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// PEDIDOS DE UMA RIFA
+// ══════════════════════════════════════════════════════════════════════
+async function verPedidos(rifaId, titulo) {
+  rifaAtualId = rifaId;
+  R('pedidos-rifa-titulo').textContent = titulo;
+  irParaPagina('pedidos');
+
+  try {
+    const pedidos = await apiFetch(`/rifas/${rifaId}/participantes`);
+
+    if (pedidos.length === 0) {
+      R('pedidos-table').innerHTML = '<div class="empty-state">Nenhum pedido ainda</div>';
+      return;
+    }
+
+    R('pedidos-table').innerHTML = `
+      <table>
+        <thead><tr><th>Nome</th><th>WhatsApp</th><th>Qtd</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead>
+        <tbody>
+          ${pedidos.map(p => `
+            <tr>
+              <td>${p.nome}</td>
+              <td>${p.telefone}</td>
+              <td>${p.quantidade}</td>
+              <td>${fmt(p.valor_total)}</td>
+              <td><span class="badge ${p.status}">${p.status}</span></td>
+              <td>${new Date(p.criado_em).toLocaleString('pt-BR')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+R('btn-voltar-rifas').addEventListener('click', () => irParaPagina('rifas'));
+
+// ══════════════════════════════════════════════════════════════════════
+// EXCLUIR
+// ══════════════════════════════════════════════════════════════════════
+async function excluirRifa(id) {
+  if (!confirm('Excluir esta rifa permanentemente? Todos os pedidos, bilhetes e dados da roleta serão apagados. Essa ação não pode ser desfeita.')) return;
+  try {
+    await apiFetch(`/rifas/${id}`, { method: 'DELETE' });
+    showToast('Rifa excluída');
+    carregarRifas();
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// Pausar
+// ══════════════════════════════════════════════════════════════════════
+async function pausarRifa(id) {
+  if (!confirm('Pausar esta rifa? Ela vai sumir do site público até você reativar.')) return;
+  try {
+    await apiFetch(`/rifas/${id}/pausar`, { method: 'PATCH' });
+    showToast('Rifa pausada');
+    carregarRifas();
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+async function reativarRifa(id) {
+  try {
+    await apiFetch(`/rifas/${id}/reativar`, { method: 'PATCH' });
+    showToast('Rifa reativada! 🍀');
+    carregarRifas();
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SORTEIO
+// ══════════════════════════════════════════════════════════════════════
+function abrirModalSorteio(rifaId) {
+  rifaParaSortear = rifaId;
+  R('modal-sorteio').classList.add('ativo');
+}
+R('modal-sorteio-close').addEventListener('click', () => R('modal-sorteio').classList.remove('ativo'));
+R('btn-cancelar-sorteio').addEventListener('click', () => R('modal-sorteio').classList.remove('ativo'));
+
+R('btn-confirmar-sorteio').addEventListener('click', async () => {
+  try {
+    const resultado = await apiFetch(`/rifas/${rifaParaSortear}/sortear`, { method: 'POST' });
+
+    R('modal-sorteio').classList.remove('ativo');
+    R('resultado-nome').textContent     = resultado.ganhador.nome;
+    R('resultado-telefone').textContent = resultado.ganhador.telefone;
+    R('modal-resultado').classList.add('ativo');
+
+    carregarRifas();
+
+  } catch (e) {
+    showToast(e.message, true);
+    R('modal-sorteio').classList.remove('ativo');
+  }
+});
+R('modal-resultado-close').addEventListener('click', () => R('modal-resultado').classList.remove('ativo'));
+</script>
+</body>
+</html>

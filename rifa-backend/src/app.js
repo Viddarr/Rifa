@@ -53,6 +53,7 @@ app.use('/api/rifas',     require('./routes/rifas'));
 app.use('/api/pedidos',   require('./routes/pedidos').router);
 app.use('/api/webhook',   require('./routes/webhook'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/roleta', require('./routes/roleta'));
 
 // ── Health check ───────────────────────────────────────────────────────
 app.get('/health', (req, res) => {

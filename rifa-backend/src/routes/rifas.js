@@ -159,23 +159,32 @@ router.post('/', authMiddleware, async (req, res) => {
 // PUT /api/rifas/:id — editar rifa (só se ainda não tiver vendas)
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
-    const { titulo, descricao, imagem_url, data_sorteio } = req.body;
+    const { titulo, descricao, imagem_url, data_sorteio, preco_bilhete, meta_bilhetes } = req.body;
 
     const rifa = await queryOne('SELECT * FROM rifas WHERE id = $1', [req.params.id]);
     if (!rifa) return res.status(404).json({ erro: 'Rifa não encontrada' });
     if (rifa.status !== 'ativa') return res.status(400).json({ erro: 'Só rifas ativas podem ser editadas' });
 
+    // Se já tem vendas, avisa mas permite (decisão do admin)
+    const vendas = await queryOne(
+      "SELECT COUNT(*) AS total FROM pedidos WHERE rifa_id = $1 AND status = 'pago'",
+      [req.params.id]
+    );
+    const temVendas = parseInt(vendas?.total || 0) > 0;
+
     const atualizada = await queryOne(`
       UPDATE rifas SET
-        titulo       = COALESCE($1, titulo),
-        descricao    = COALESCE($2, descricao),
-        imagem_url   = COALESCE($3, imagem_url),
-        data_sorteio = COALESCE($4, data_sorteio)
-      WHERE id = $5
+        titulo        = COALESCE($1, titulo),
+        descricao     = COALESCE($2, descricao),
+        imagem_url    = COALESCE($3, imagem_url),
+        data_sorteio  = COALESCE($4, data_sorteio),
+        preco_bilhete = COALESCE($5, preco_bilhete),
+        meta_bilhetes = COALESCE($6, meta_bilhetes)
+      WHERE id = $7
       RETURNING *
-    `, [titulo, descricao, imagem_url, data_sorteio, req.params.id]);
+    `, [titulo, descricao, imagem_url, data_sorteio, preco_bilhete, meta_bilhetes, req.params.id]);
 
-    res.json(atualizada);
+    res.json({ ...atualizada, aviso: temVendas ? 'Esta rifa já possui vendas — alterar o preço não afeta pedidos já criados.' : null });
   } catch (err) {
     console.error('[rifas/editar]', err);
     res.status(500).json({ erro: 'Erro interno' });
@@ -264,6 +273,62 @@ router.get('/:id/participantes', authMiddleware, async (req, res) => {
     res.json(participantes);
   } catch (err) {
     console.error('[rifas/participantes]', err);
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
+// DELETE /api/rifas/:id — exclui permanentemente uma rifa (só se não tiver pedidos)
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const rifa = await queryOne('SELECT * FROM rifas WHERE id = $1', [req.params.id]);
+    if (!rifa) return res.status(404).json({ erro: 'Rifa não encontrada' });
+
+    const pedidos = await queryOne(
+      'SELECT COUNT(*) AS total FROM pedidos WHERE rifa_id = $1',
+      [req.params.id]
+    );
+
+    if (parseInt(pedidos?.total || 0) > 0) {
+      return res.status(400).json({
+        erro: 'Esta rifa já possui pedidos registrados e não pode ser excluída. Use "Pausar" ou "Encerrar" em vez disso.',
+      });
+    }
+
+    await execute('DELETE FROM rifas WHERE id = $1', [req.params.id]);
+    res.json({ mensagem: 'Rifa excluída com sucesso' });
+
+  } catch (err) {
+    console.error('[rifas/excluir]', err);
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
+// PATCH /api/rifas/:id/pausar — desativa temporariamente (não aparece no site público)
+router.patch('/:id/pausar', authMiddleware, async (req, res) => {
+  try {
+    const rifa = await queryOne('SELECT * FROM rifas WHERE id = $1', [req.params.id]);
+    if (!rifa) return res.status(404).json({ erro: 'Rifa não encontrada' });
+    if (rifa.status !== 'ativa') return res.status(400).json({ erro: 'Só rifas ativas podem ser pausadas' });
+
+    await execute("UPDATE rifas SET status = 'pausada' WHERE id = $1", [req.params.id]);
+    res.json({ mensagem: 'Rifa pausada' });
+  } catch (err) {
+    console.error('[rifas/pausar]', err);
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
+// PATCH /api/rifas/:id/reativar — volta a rifa pausada para ativa
+router.patch('/:id/reativar', authMiddleware, async (req, res) => {
+  try {
+    const rifa = await queryOne('SELECT * FROM rifas WHERE id = $1', [req.params.id]);
+    if (!rifa) return res.status(404).json({ erro: 'Rifa não encontrada' });
+    if (rifa.status !== 'pausada') return res.status(400).json({ erro: 'Só rifas pausadas podem ser reativadas' });
+
+    await execute("UPDATE rifas SET status = 'ativa' WHERE id = $1", [req.params.id]);
+    res.json({ mensagem: 'Rifa reativada' });
+  } catch (err) {
+    console.error('[rifas/reativar]', err);
     res.status(500).json({ erro: 'Erro interno' });
   }
 });
