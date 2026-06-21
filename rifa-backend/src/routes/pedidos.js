@@ -14,10 +14,10 @@ const router = express.Router();
 // POST /api/pedidos — inicia uma compra
 router.post('/', async (req, res) => {
   try {
-    const { rifa_id, nome, telefone, quantidade } = req.body;
+    const { rifa_id, nome, telefone, cpf, quantidade } = req.body;
 
     // Validações
-    if (!rifa_id || !nome || !telefone || !quantidade) {
+    if (!rifa_id || !nome || !telefone || !cpf || !quantidade) {
       return res.status(400).json({ erro: 'Preencha todos os campos' });
     }
     if (quantidade < 1 || quantidade > 100) {
@@ -51,14 +51,15 @@ router.post('/', async (req, res) => {
     const resultado = await transaction(async (client) => {
       // 1. Cria o participante
       const { rows: [participante] } = await client.query(
-        'INSERT INTO participantes (nome, telefone) VALUES ($1, $2) RETURNING *',
-        [nome.trim(), telefone.trim()]
+        'INSERT INTO participantes (nome, telefone, cpf) VALUES ($1, $2, $3) RETURNING *',
+        [nome.trim(), telefone.trim(), cpf.trim()]
       );
 
       // 2. Gera cobrança PIX no EFI Bank
       const pix = await gerarCobranca({
         valor:     valor_total,
         nome:      nome.trim(),
+        cpf:       cpf.trim(),
         descricao: `${quantidade} bilhete(s) — ${rifa.titulo}`,
       });
 

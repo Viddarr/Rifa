@@ -1,11 +1,6 @@
 const path   = require('path');
 const EfiPay = require('sdk-node-apis-efi');
 
-console.log('CAMINHO DO SDK (teste):', require.resolve('sdk-node-apis-efi'));
-console.log('DEBUG client_id:', process.env.EFI_CLIENT_ID);
-console.log('DEBUG sandbox:', process.env.EFI_SANDBOX);
-console.log('DEBUG certificado:', process.env.EFI_CERTIFICADO);
-
 const efipay = new EfiPay({
   client_id:     process.env.EFI_CLIENT_ID,
   client_secret: process.env.EFI_CLIENT_SECRET,
@@ -14,17 +9,15 @@ const efipay = new EfiPay({
   cache:         false,
 });
 
-async function gerarCobranca({ valor, nome, descricao }) {
+async function gerarCobranca({ valor, nome, cpf, descricao }) {
   const body = {
     calendario: { expiracao: 3600 },
-    devedor:    { 
-      nome,
-      cpf: '11144477735',   
-    },
+    devedor:    { nome, cpf },
     valor:      { original: valor.toFixed(2) },
     chave:      process.env.PIX_CHAVE,
     infoAdicionais: [{ nome: 'Descricao', valor: descricao }],
   };
+
   const cobranca = await efipay.pixCreateImmediateCharge({}, body);
   const qr       = await efipay.pixGenerateQRCode({ id: cobranca.loc.id });
 

@@ -391,6 +391,11 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
       <input class="fi" id="input-whats" type="tel"
              placeholder="(41) 99999-9999" autocomplete="tel"/>
     </div>
+    <div class="fg">
+      <label class="fl" for="input-cpf">CPF</label>
+      <input class="fi" id="input-cpf" type="text"
+             placeholder="000.000.000-00" autocomplete="off" maxlength="14"/>
+    </div>
     <button id="btn-comprar" type="button" disabled>
       PAGAR COM PIX
     </button>
@@ -620,12 +625,23 @@ function syncPreview() {
 function validarForm() {
   const ok = state.qtd > 0
     && R('input-nome').value.trim().length > 2
-    && R('input-whats').value.trim().length > 7;
+    && R('input-whats').value.trim().length > 7
+    && R('input-cpf').value.replace(/\D/g, '').length === 11;
   R('btn-comprar').disabled = !ok;
 }
 
 R('input-nome').addEventListener('input',  validarForm);
 R('input-whats').addEventListener('input', validarForm);
+R('input-cpf').addEventListener('input',   validarForm);
+
+// Formata o CPF automaticamente enquanto digita (000.000.000-00)
+R('input-cpf').addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+  v = v.replace(/(\d{3})(\d)/, '$1.$2');
+  v = v.replace(/(\d{3})(\d)/, '$1.$2');
+  v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  e.target.value = v;
+});
 
 // ══════════════════════════════════════════════════════════════════════
 // COMPRA — chama a API e abre o modal PIX
@@ -633,7 +649,8 @@ R('input-whats').addEventListener('input', validarForm);
 R('btn-comprar').addEventListener('click', async () => {
   const nome     = R('input-nome').value.trim();
   const telefone = R('input-whats').value.trim();
-  if (!nome || !telefone || state.qtd < 1) return;
+  const cpf      = R('input-cpf').value.replace(/\D/g, '');
+  if (!nome || !telefone || !cpf || state.qtd < 1) return;
 
   setLoading(true);
 
@@ -645,6 +662,7 @@ R('btn-comprar').addEventListener('click', async () => {
         rifa_id:    RIFA_ID,
         nome,
         telefone,
+        cpf,
         quantidade: state.qtd,
       }),
     });
