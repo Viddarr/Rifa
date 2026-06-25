@@ -455,9 +455,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   </div>
   <div id="prog-track"><div id="prog-fill"></div></div>
   <div id="prog-bot">
-    <span>0</span>
+    <span id="prog-count">0 / 1000</span>
     <span id="prog-pct">35% vendido</span>
-    <span>1000</span>
   </div>
 </div>
 
@@ -683,8 +682,6 @@ async function mostrarInfoBilhetesPorGiro() {
     console.error('[mostrarInfoBilhetesPorGiro]', err);
   }
 }
-
-mostrarInfoBilhetesPorGiro();
 
 // ══════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -1187,8 +1184,7 @@ R('btn-fechar-resultado').addEventListener('click', () => {
 // ══════════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════════
-carregarConfigRoleta();
-if (state.telefoneComprador) checarGirosRoleta();
+
 buscarRifaAtiva().then(id => {
   if (id) {
     RIFA_ID = id;
