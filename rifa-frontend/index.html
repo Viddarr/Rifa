@@ -742,9 +742,9 @@ async function carregarRifa() {
 
     // Prêmios
     if (rifa.premios?.length) {
-      if (rifa.premios[0]) R('pc1-desc').textContent = rifa.premios[0].descricao;
-      if (rifa.premios[1]) R('pc2-desc').textContent = rifa.premios[1].descricao;
-      if (rifa.premios[2]) R('pc3-desc').textContent = rifa.premios[2].descricao;
+      if (rifa.premios[0] && R('pc1-desc')) R('pc1-desc').textContent = rifa.premios[0].descricao ?? '';
+      if (rifa.premios[1] && R('pc2-desc')) R('pc2-desc').textContent = rifa.premios[1].descricao ?? '';
+      if (rifa.premios[2] && R('pc3-desc')) R('pc3-desc').textContent = rifa.premios[2].descricao ?? '';
     }
 
     // Título da página

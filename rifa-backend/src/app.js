@@ -12,14 +12,19 @@ const app = express();
 
 // ── CORS ───────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: [
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'http://localhost:5501',
-    'http://127.0.0.1:5501',
-    'https://toprifas.vercel.app',
-    'https://toprifas-7j39bhrsi-erebo.vercel.app',
-  ],
+  origin: (origin, callback) => {
+    const permitidas = [
+      'https://toprifas.vercel.app',
+    ];
+    const vercelPreview = origin && origin.endsWith('.vercel.app');
+    const local = !origin || origin.includes('localhost') || origin.includes('127.0.0.1');
+
+    if (local || vercelPreview || permitidas.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS bloqueado'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
