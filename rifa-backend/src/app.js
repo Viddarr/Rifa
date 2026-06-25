@@ -32,6 +32,8 @@ app.use(cors({
 // ── Body parser ────────────────────────────────────────────────────────
 app.use(express.json());
 
+app.set('trust proxy', 1);
+
 // ── Rate limiting ──────────────────────────────────────────────────────
 // Limita a 100 requisições por IP a cada 15 minutos (geral)
 app.use(rateLimit({
