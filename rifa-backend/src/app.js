@@ -18,7 +18,7 @@ app.use(cors({
     'http://localhost:5501',
     'http://127.0.0.1:5501',
     'https://toprifas.vercel.app',
-    'https://toprifas-gsukf5cav-erebo.vercel.app',
+    'https://toprifas-7j39bhrsi-erebo.vercel.app',
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],

@@ -7,3 +7,7 @@ const pool = new Pool({
 pool.query('SELECT id, titulo, status FROM rifas')
   .then(r => console.log(r.rows))
   .finally(() => pool.end());
+// adiciona no ver-rifas.js
+pool.query('SELECT id, titulo, status FROM rifas WHERE id = 1')
+  .then(r => console.log(r.rows))
+  .finally(() => pool.end());

@@ -644,7 +644,15 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 // Em produção troque pela URL do Railway
 // ══════════════════════════════════════════════════════════════════════
 const API = 'https://rifa-production-5fa0.up.railway.app/api';
-const RIFA_ID = 1;   // ID da rifa que esta página representa
+let RIFA_ID = null;
+
+// Busca a primeira rifa ativa automaticamente
+async function buscarRifaAtiva() {
+  const res   = await fetch(`${API}/rifas`);
+  const rifas = await res.json();
+  if (rifas.length === 0) return null;
+  return rifas[0].id; // pega a primeira rifa ativa
+}
 
 // ══════════════════════════════════════════════════════════════════════
 // ESTADO
@@ -1181,7 +1189,16 @@ R('btn-fechar-resultado').addEventListener('click', () => {
 // ══════════════════════════════════════════════════════════════════════
 carregarConfigRoleta();
 if (state.telefoneComprador) checarGirosRoleta();
-carregarRifa();
+buscarRifaAtiva().then(id => {
+  if (id) {
+    RIFA_ID = id;
+    carregarConfigRoleta();
+    mostrarInfoBilhetesPorGiro();
+    carregarRifa();
+  } else {
+    console.log('Nenhuma rifa ativa no momento');
+  }
+});
 </script>
 </body>
 </html>
