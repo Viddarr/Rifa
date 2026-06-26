@@ -455,7 +455,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   </div>
   <div id="prog-track"><div id="prog-fill"></div></div>
   <div id="prog-bot">
-    <span id="prog-count">0 / 1000</span>
+    <span id="prog-count">0%</span>
     <span id="prog-pct">35% vendido</span>
   </div>
 </div>
@@ -729,12 +729,12 @@ async function carregarRifa() {
     if (meta) {
       const pct = Math.min(100, Math.round((vendidos / meta) * 100));
       R('prog-fill').style.width = pct + '%';
-      R('prog-count').innerHTML  = `${vendidos} <span style="color:var(--gray-d);font-size:16px;">/${meta}</span>`;
-      R('prog-pct').textContent  = `${pct}% vendido`;
+      R('prog-count').textContent = `${pct}%`;
+      R('prog-pct').textContent = `${pct}% vendido`;
     } else {
       R('prog-fill').style.width = '0%';
-      R('prog-count').textContent = vendidos + ' vendidos';
-      R('prog-pct').textContent   = '';
+      R('prog-count').textContent = '0%';
+      R('prog-pct').textContent = '';
     }
 
     // Prêmios
