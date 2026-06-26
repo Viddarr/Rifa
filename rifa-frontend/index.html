@@ -388,7 +388,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   </h1>
   <p id="hero-tag">Compre seus bilhetes, aguarde o sorteio e boa sorte.</p>
   <div id="hero-stats">
-    <div class="hst">
+    <div class="hst" style="display: none;">
       <span class="hst-v" style="color:var(--red)"  id="stat-total">1.000</span>
       <span class="hst-l">Bilhetes Totais</span>
     </div>
@@ -399,6 +399,10 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     <div class="hst">
       <span class="hst-v" style="color:var(--white)" id="stat-data">10/05</span>
       <span class="hst-l">Sorteio</span>
+    </div>
+      <div class="hst" style="display: none;">
+        <span class="hst-v" style="color:var(--red)"  id="stat-disp">647</span>
+        <span class="hst-l">Disponíveis</span>
     </div>
   </div>
   <div id="hero-btns">
