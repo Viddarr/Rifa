@@ -43,20 +43,23 @@ router.get('/:id', async (req, res) => {
       SELECT
         r.*,
         COUNT(b.id)                              AS total_bilhetes_vendidos,
-        COALESCE(SUM(p.valor_total), 0)          AS total_arrecadado,
-        json_agg(pr ORDER BY pr.posicao)
-          FILTER (WHERE pr.id IS NOT NULL)       AS premios
+        COALESCE(SUM(p.valor_total), 0)          AS total_arrecadado
       FROM rifas r
-      LEFT JOIN pedidos  p  ON p.rifa_id  = r.id AND p.status = 'pago'
-      LEFT JOIN bilhetes b  ON b.rifa_id  = r.id
-      LEFT JOIN premios  pr ON pr.rifa_id = r.id
+      LEFT JOIN pedidos  p ON p.rifa_id = r.id AND p.status = 'pago'
+      LEFT JOIN bilhetes b ON b.rifa_id = r.id
       WHERE r.id = $1
       GROUP BY r.id
     `, [req.params.id]);
 
     if (!rifa) return res.status(404).json({ erro: 'Rifa não encontrada' });
 
-    res.json(rifa);
+    // Busca prêmios separadamente com ORDER BY garantido
+    const premios = await query(
+      'SELECT * FROM premios WHERE rifa_id = $1 ORDER BY posicao ASC',
+      [req.params.id]
+    );
+
+    res.json({ ...rifa, premios });
   } catch (err) {
     console.error('[rifas/detalhe]', err);
     res.status(500).json({ erro: 'Erro interno' });

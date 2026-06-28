@@ -737,11 +737,15 @@ async function carregarRifa() {
       R('prog-pct').textContent = '';
     }
 
-    // Prêmios
+    // Prêmios — ordena por posição para garantir a ordem certa independente do banco
     if (rifa.premios?.length) {
-      if (rifa.premios[0] && R('pc1-desc')) R('pc1-desc').textContent = rifa.premios[0].descricao ?? '';
-      if (rifa.premios[1] && R('pc2-desc')) R('pc2-desc').textContent = rifa.premios[1].descricao ?? '';
-      if (rifa.premios[2] && R('pc3-desc')) R('pc3-desc').textContent = rifa.premios[2].descricao ?? '';
+      const premios = [...rifa.premios]
+        .filter(p => p !== null)
+        .sort((a, b) => (a.posicao ?? 99) - (b.posicao ?? 99));
+
+      if (premios[0] && R('pc1-desc')) R('pc1-desc').textContent = premios[0].descricao ?? '';
+      if (premios[1] && R('pc2-desc')) R('pc2-desc').textContent = premios[1].descricao ?? '';
+      if (premios[2] && R('pc3-desc')) R('pc3-desc').textContent = premios[2].descricao ?? '';
     }
 
     // Título da página
