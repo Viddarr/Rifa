@@ -16,17 +16,31 @@ router.get('/', async (req, res) => {
     const rifas = await query(`
       SELECT
         r.*,
-        COUNT(b.id)                              AS total_bilhetes_vendidos,
-        COALESCE(SUM(p.valor_total), 0)          AS total_arrecadado,
+
+        (
+          SELECT COUNT(*)
+          FROM bilhetes b
+          WHERE b.rifa_id = r.id
+        ) AS total_bilhetes_vendidos,
+
+        (
+          SELECT COALESCE(SUM(valor_total), 0)
+          FROM pedidos p
+          WHERE p.rifa_id = r.id
+            AND p.status = 'pago'
+        ) AS total_arrecadado,
+
         json_agg(pr ORDER BY pr.posicao)
-          FILTER (WHERE pr.id IS NOT NULL)       AS premios
+          FILTER (WHERE pr.id IS NOT NULL) AS premios
+
       FROM rifas r
-      LEFT JOIN pedidos  p  ON p.rifa_id  = r.id AND p.status = 'pago'
-      LEFT JOIN bilhetes b  ON b.rifa_id  = r.id
-      LEFT JOIN premios  pr ON pr.rifa_id = r.id
+      LEFT JOIN premios pr
+        ON pr.rifa_id = r.id
+
       WHERE r.status = 'ativa'
+
       GROUP BY r.id
-      ORDER BY r.criado_em DESC
+      ORDER BY r.criado_em DESC;
     `);
 
     res.json(rifas);
@@ -42,13 +56,22 @@ router.get('/:id', async (req, res) => {
     const rifa = await queryOne(`
       SELECT
         r.*,
-        COUNT(b.id)                              AS total_bilhetes_vendidos,
-        COALESCE(SUM(p.valor_total), 0)          AS total_arrecadado
+
+        (
+          SELECT COUNT(*)
+          FROM bilhetes b
+          WHERE b.rifa_id = r.id
+        ) AS total_bilhetes_vendidos,
+
+        (
+          SELECT COALESCE(SUM(valor_total), 0)
+          FROM pedidos p
+          WHERE p.rifa_id = r.id
+            AND p.status = 'pago'
+        ) AS total_arrecadado
+
       FROM rifas r
-      LEFT JOIN pedidos  p ON p.rifa_id = r.id AND p.status = 'pago'
-      LEFT JOIN bilhetes b ON b.rifa_id = r.id
-      WHERE r.id = $1
-      GROUP BY r.id
+      WHERE r.id = $1;
     `, [req.params.id]);
 
     if (!rifa) return res.status(404).json({ erro: 'Rifa não encontrada' });
@@ -100,14 +123,24 @@ router.get('/:id/resultado', async (req, res) => {
 router.get('/admin/todas', authMiddleware, async (req, res) => {
   try {
     const rifas = await query(`
-      SELECT r.*,
-        COUNT(b.id)                    AS total_bilhetes_vendidos,
-        COALESCE(SUM(p.valor_total),0) AS total_arrecadado
+      SELECT
+        r.*,
+
+        (
+          SELECT COUNT(*)
+          FROM bilhetes b
+          WHERE b.rifa_id = r.id
+        ) AS total_bilhetes_vendidos,
+
+        (
+          SELECT COALESCE(SUM(valor_total), 0)
+          FROM pedidos p
+          WHERE p.rifa_id = r.id
+            AND p.status = 'pago'
+        ) AS total_arrecadado
+
       FROM rifas r
-      LEFT JOIN pedidos  p ON p.rifa_id = r.id AND p.status = 'pago'
-      LEFT JOIN bilhetes b ON b.rifa_id = r.id
-      GROUP BY r.id
-      ORDER BY r.criado_em DESC
+      ORDER BY r.criado_em DESC;
     `);
     res.json(rifas);
   } catch (err) {
@@ -227,9 +260,10 @@ router.post('/:id/sortear', authMiddleware, async (req, res) => {
     const ganhador = await queryOne(`
       SELECT b.id AS bilhete_id, p.id AS participante_id, p.nome, p.telefone
       FROM bilhetes b
-      JOIN pedidos       pd ON pd.id = b.pedido_id
-      JOIN participantes p  ON p.id  = pd.participante_id
+      JOIN pedidos pd ON pd.id = b.pedido_id
+      JOIN participantes p ON p.id = pd.participante_id
       WHERE b.rifa_id = $1
+        AND pd.status = 'pago'
       ORDER BY RANDOM()
       LIMIT 1
     `, [req.params.id]);
