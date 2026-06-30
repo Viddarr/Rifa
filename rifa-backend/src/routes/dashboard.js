@@ -13,32 +13,50 @@ router.get('/', authMiddleware, async (req, res) => {
   try {
     const [resumo, rifasAtivas, ultimosPedidos] = await Promise.all([
 
-      // Totais gerais
+      // Totais gerais — bilhetes e arrecadado calculados em subqueries
+      // separadas para evitar fan-out do JOIN duplo (pedidos x bilhetes)
       queryOne(`
         SELECT
-          COUNT(DISTINCT r.id)  FILTER (WHERE r.status = 'ativa')    AS rifas_ativas,
-          COUNT(DISTINCT r.id)  FILTER (WHERE r.status = 'sorteada') AS rifas_sorteadas,
-          COUNT(b.id)                                                 AS total_bilhetes,
-          COALESCE(SUM(p.valor_total) FILTER (WHERE p.status='pago'), 0) AS total_arrecadado
+          COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'ativa')    AS rifas_ativas,
+          COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'sorteada') AS rifas_sorteadas,
+
+          (
+            SELECT COUNT(*)
+            FROM bilhetes b
+            JOIN pedidos pd ON pd.id = b.pedido_id
+            WHERE pd.status = 'pago'
+          ) AS total_bilhetes,
+
+          (
+            SELECT COALESCE(SUM(valor_total), 0)
+            FROM pedidos
+            WHERE status = 'pago'
+          ) AS total_arrecadado
+
         FROM rifas r
-        LEFT JOIN pedidos  p ON p.rifa_id = r.id
-        LEFT JOIN bilhetes b ON b.rifa_id = r.id AND b.pedido_id IN (
-          SELECT id FROM pedidos WHERE status = 'pago'
-        )
       `),
 
-      // Rifas ativas com progresso
+      // Rifas ativas com progresso — mesma estratégia: subqueries isoladas
       query(`
         SELECT
           r.id, r.titulo, r.preco_bilhete, r.meta_bilhetes,
           r.data_sorteio, r.status,
-          COUNT(b.id)                            AS bilhetes_vendidos,
-          COALESCE(SUM(p.valor_total), 0)        AS arrecadado
+
+          (
+            SELECT COUNT(*)
+            FROM bilhetes b
+            WHERE b.rifa_id = r.id
+          ) AS bilhetes_vendidos,
+
+          (
+            SELECT COALESCE(SUM(valor_total), 0)
+            FROM pedidos p
+            WHERE p.rifa_id = r.id
+              AND p.status = 'pago'
+          ) AS arrecadado
+
         FROM rifas r
-        LEFT JOIN pedidos  p ON p.rifa_id = r.id AND p.status = 'pago'
-        LEFT JOIN bilhetes b ON b.rifa_id = r.id
         WHERE r.status = 'ativa'
-        GROUP BY r.id
         ORDER BY r.criado_em DESC
       `),
 
