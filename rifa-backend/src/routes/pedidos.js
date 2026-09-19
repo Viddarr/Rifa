@@ -172,6 +172,16 @@ router.patch('/:id/cancelar', authMiddleware, async (req, res) => {
   }
 });
 
+// ── HELPER: mascara nome pra exibição pública (LGPD) ─────────────────────
+function mascararNome(nomeCompleto) {
+  if (!nomeCompleto) return null;
+  const partes = nomeCompleto.trim().split(/\s+/);
+  if (partes.length === 1) return partes[0];
+  const primeiro = partes[0];
+  const ultimaInicial = partes[partes.length - 1][0];
+  return `${primeiro} ${ultimaInicial}.`;
+}
+
 // ── HELPER INTERNO (usado pelo webhook e confirmação manual) ────────────
 async function _confirmarPedido(pedido_id, rifa_id, quantidade) {
   await transaction(async (client) => {
@@ -181,15 +191,59 @@ async function _confirmarPedido(pedido_id, rifa_id, quantidade) {
       [pedido_id]
     );
 
-    // 2. Gera os bilhetes
+    // 2. Busca a meta de bilhetes da rifa (define o intervalo de números válidos)
+    const { rows: [rifa] } = await client.query(
+      'SELECT meta_bilhetes FROM rifas WHERE id = $1',
+      [rifa_id]
+    );
+
+    // 3. Gera os bilhetes com número aleatório único dentro da rifa
+    const numerosGerados = [];
     for (let i = 0; i < quantidade; i++) {
+      let inserido = false;
+      let tentativas = 0;
+
+      while (!inserido) {
+        tentativas++;
+        if (tentativas > 100) {
+          throw new Error('NUMEROS_ESGOTADOS'); // segurança: evita loop infinito se a rifa estiver praticamente esgotada
+        }
+
+        const numero = rifa?.meta_bilhetes
+          ? Math.floor(Math.random() * rifa.meta_bilhetes) + 1
+          : null; // sem meta definida: numero fica null (comportamento antigo)
+
+        try {
+          const { rows: [bilhete] } = await client.query(
+            'INSERT INTO bilhetes (rifa_id, pedido_id, numero) VALUES ($1, $2, $3) RETURNING numero',
+            [rifa_id, pedido_id, numero]
+          );
+          numerosGerados.push(bilhete.numero);
+          inserido = true;
+        } catch (err) {
+          // 23505 = unique_violation (rifa_id, numero) — número já usado, tenta outro
+          if (err.code === '23505') continue;
+          throw err;
+        }
+      }
+    }
+
+    // 4. Verifica se algum número sorteado bate com uma cota premiada
+    if (numerosGerados.length > 0 && numerosGerados[0] !== null) {
+      const { rows: [participante] } = await client.query(
+        'SELECT nome FROM participantes WHERE id = $1',
+        [pedido.participante_id]
+      );
+
       await client.query(
-        'INSERT INTO bilhetes (rifa_id, pedido_id) VALUES ($1, $2)',
-        [rifa_id, pedido_id]
+        `UPDATE cotas_premiadas
+         SET revelado = true, comprador_nome = $1, revelado_em = NOW()
+         WHERE rifa_id = $2 AND numero = ANY($3::int[]) AND revelado = false`,
+        [participante?.nome || null, rifa_id, numerosGerados]
       );
     }
 
-    // 3. Calcula giros da roleta ganhos nesta compra
+    // 5. Calcula giros da roleta ganhos nesta compra
     const { rows: [config] } = await client.query(
       'SELECT * FROM roleta_config WHERE rifa_id = $1 AND ativo = true',
       [rifa_id]
@@ -208,7 +262,7 @@ async function _confirmarPedido(pedido_id, rifa_id, quantidade) {
       }
     }
 
-    // 4. Verifica marcos garantidos (prêmio automático sem sorteio)
+    // 6. Verifica marcos garantidos (prêmio automático sem sorteio)
     const { rows: marcos } = await client.query(
       'SELECT * FROM roleta_marcos_garantidos WHERE rifa_id = $1 AND quantidade_minima <= $2 ORDER BY quantidade_minima DESC LIMIT 1',
       [rifa_id, quantidade]
@@ -222,4 +276,5 @@ async function _confirmarPedido(pedido_id, rifa_id, quantidade) {
     }
   });
 }
-module.exports = { router, _confirmarPedido };
+
+module.exports = { router, _confirmarPedido, mascararNome };

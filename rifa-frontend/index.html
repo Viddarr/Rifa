@@ -422,7 +422,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     <div class="pc" id="pc1">
       <span class="pc-n">1</span>
       <span class="pc-icon" id="pc1-icon">🏆</span>
-      <img id="pc1-img" style="display:none;width:100%;max-height:160px;object-fit:cover;margin-bottom:12px;" alt="Foto do 1º prêmio"/>
+      <img id="pc1-img" style="display:none;width:100%;height:200px;object-fit:contain;background:var(--dark3);margin-bottom:12px;" alt="Foto do 1º prêmio"/>
       <div class="pc-place r">1º Lugar</div>
       <!-- EDITE: document.getElementById('pc1-desc').textContent -->
       <div class="pc-desc" id="pc1-desc">
@@ -434,7 +434,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     <div class="pc" id="pc2">
       <span class="pc-n">2</span>
       <span class="pc-icon" id="pc2-icon">🎁</span>
-      <img id="pc2-img" style="display:none;width:100%;max-height:160px;object-fit:cover;margin-bottom:12px;" alt="Foto do 2º prêmio"/>
+      <img id="pc2-img" style="display:none;width:100%;height:200px;object-fit:contain;background:var(--dark3);margin-bottom:12px;" alt="Foto do 2º prêmio"/>
       <div class="pc-place g">2º Lugar</div>
       <div class="pc-desc" id="pc2-desc">Descreva o segundo prêmio aqui.</div>
       <span class="pc-badge g">2º Prêmio</span>
@@ -443,7 +443,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     <div class="pc" id="pc3">
       <span class="pc-n">3</span>
       <span class="pc-icon" id="pc3-icon">🎉</span>
-      <img id="pc3-img" style="display:none;width:100%;max-height:160px;object-fit:cover;margin-bottom:12px;" alt="Foto do 3º prêmio"/>
+      <img id="pc3-img" style="display:none;width:100%;height:200px;object-fit:contain;background:var(--dark3);margin-bottom:12px;" alt="Foto do 3º prêmio"/>
       <div class="pc-place g">3º Lugar</div>
       <div class="pc-desc" id="pc3-desc">Descreva o terceiro prêmio aqui.</div>
       <span class="pc-badge g">3º Prêmio</span>
@@ -1352,12 +1352,18 @@ R('cpf-buscar').addEventListener('click', async () => {
     const porRifa = {};
     data.bilhetes.forEach(b => {
       if (!porRifa[b.rifa_titulo]) porRifa[b.rifa_titulo] = [];
-      porRifa[b.rifa_titulo].push(b.numero);
+      porRifa[b.rifa_titulo].push(b);
     });
-    R('cpf-resultado').innerHTML = Object.entries(porRifa).map(([titulo, numeros]) => `
-      <div style="margin-bottom:12px;">
+    R('cpf-resultado').innerHTML = Object.entries(porRifa).map(([titulo, bilhetesRifa]) => `
+      <div style="margin-bottom:14px;">
         <strong style="color:var(--green);">${titulo}</strong><br/>
-        <span style="color:var(--gray);">${numeros.join(', ')}</span>
+        ${bilhetesRifa.map(b => `
+          <div style="padding:4px 0;">
+            <span style="color:var(--gray);">Nº ${b.numero}</span>
+            ${b.cota_premio ? `<span style="color:var(--green);font-size:11px;"> 🎯 Cota premiada: ${b.cota_premio}${b.cota_revelada ? ' (já resgatada/confirmada)' : ''}</span>` : ''}
+            ${b.ganhou_sorteio ? `<span style="color:var(--red);font-size:11px;font-weight:700;"> 🏆 Você é o ganhador do sorteio principal desta rifa!</span>` : ''}
+          </div>
+        `).join('')}
       </div>
     `).join('');
   } catch (err) {

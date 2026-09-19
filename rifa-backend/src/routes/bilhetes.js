@@ -17,16 +17,20 @@ router.get('/cpf/:cpf', async (req, res) => {
 
     const bilhetes = await query(`
       SELECT
-        r.id       AS rifa_id,
-        r.titulo   AS rifa_titulo,
-        r.status   AS rifa_status,
+        r.id           AS rifa_id,
+        r.titulo       AS rifa_titulo,
+        r.status       AS rifa_status,
         b.numero,
-        pd.status  AS pedido_status,
-        pd.criado_em
+        pd.status      AS pedido_status,
+        pd.criado_em,
+        cp.descricao   AS cota_premio,
+        cp.revelado    AS cota_revelada,
+        (r.status = 'sorteada' AND r.bilhete_ganhador_id = b.id) AS ganhou_sorteio
       FROM participantes part
       JOIN pedidos       pd ON pd.participante_id = part.id
       JOIN bilhetes      b  ON b.pedido_id = pd.id
       JOIN rifas         r  ON r.id = b.rifa_id
+      LEFT JOIN cotas_premiadas cp ON cp.rifa_id = r.id AND cp.numero = b.numero
       WHERE part.cpf = $1
         AND pd.status = 'pago'
       ORDER BY r.criado_em DESC, b.numero ASC

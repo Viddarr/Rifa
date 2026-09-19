@@ -444,12 +444,12 @@ router.post('/:id/sortear', authMiddleware, async (req, res) => {
       return res.status(400).json({ erro: 'Nenhum bilhete pago para sortear' });
     }
 
-    // Registra o ganhador
+    // Registra o ganhador (participante + bilhete exato sorteado)
     await execute(`
       UPDATE rifas
-      SET status = 'sorteada', ganhador_id = $1, sorteio_em = NOW()
-      WHERE id = $2
-    `, [ganhador.participante_id, req.params.id]);
+      SET status = 'sorteada', ganhador_id = $1, bilhete_ganhador_id = $2, sorteio_em = NOW()
+      WHERE id = $3
+    `, [ganhador.participante_id, ganhador.bilhete_id, req.params.id]);
 
     res.json({
       mensagem:    'Sorteio realizado!',
