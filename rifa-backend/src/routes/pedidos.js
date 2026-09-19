@@ -243,14 +243,31 @@ async function _confirmarPedido(pedido_id, rifa_id, quantidade) {
       );
     }
 
-    // 5. Calcula giros da roleta ganhos nesta compra
+    // 5. Calcula giros da roleta ganhos nesta compra — considerando o TOTAL
+    //    acumulado de bilhetes pagos da pessoa nessa rifa, não só esta compra
+    //    isolada (evita que compras fracionadas ao longo do tempo nunca
+    //    "fechem" o total necessário pra ganhar um giro)
     const { rows: [config] } = await client.query(
       'SELECT * FROM roleta_config WHERE rifa_id = $1 AND ativo = true',
       [rifa_id]
     );
 
     if (config && config.bilhetes_por_giro > 0) {
-      const girosGanhos = Math.floor(quantidade / config.bilhetes_por_giro);
+      const { rows: [totalRow] } = await client.query(`
+        SELECT COUNT(*) AS total
+        FROM bilhetes b
+        JOIN pedidos pd ON pd.id = b.pedido_id
+        WHERE b.rifa_id = $1
+          AND pd.participante_id = $2
+          AND pd.status = 'pago'
+      `, [rifa_id, pedido.participante_id]);
+
+      const totalDepois = parseInt(totalRow.total);
+      const totalAntes  = totalDepois - quantidade;
+
+      const girosEsperadosDepois = Math.floor(totalDepois / config.bilhetes_por_giro);
+      const girosEsperadosAntes  = Math.floor(totalAntes  / config.bilhetes_por_giro);
+      const girosGanhos = girosEsperadosDepois - girosEsperadosAntes;
 
       if (girosGanhos > 0) {
         await client.query(`
