@@ -9,17 +9,37 @@ const pool = new Pool({
     : false,
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 15000, // Neon (free tier) pode levar alguns segundos pra "acordar" depois de ficar ocioso
 });
 
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('❌ Erro ao conectar no PostgreSQL:', err.message);
-    process.exit(1);
+// Conecta e roda a migration com retry, em vez de derrubar o processo na
+// primeira falha. Evita o crash-loop quando o Neon está hibernado/lento
+// pra responder logo após o deploy.
+async function iniciar(tentativa = 1) {
+  const MAX_TENTATIVAS = 8;
+  const ESPERA_MS = 5000;
+
+  try {
+    await pool.query('SELECT 1'); // força a primeira conexão real
+    console.log('✅ PostgreSQL conectado');
+
+    const sql = fs.readFileSync(path.join(__dirname, 'schema.pg.sql'), 'utf-8');
+    await pool.query(sql);
+    console.log('✅ Schema aplicado');
+
+  } catch (err) {
+    console.error(`❌ Erro ao conectar/migrar no PostgreSQL (tentativa ${tentativa}/${MAX_TENTATIVAS}):`, err.message);
+
+    if (tentativa >= MAX_TENTATIVAS) {
+      console.error('❌ Esgotadas as tentativas de conexão com o banco. Encerrando.');
+      process.exit(1);
+    }
+
+    setTimeout(() => iniciar(tentativa + 1), ESPERA_MS);
   }
-  release();
-  console.log('✅ PostgreSQL conectado');
-});
+}
+
+iniciar();
 
 async function query(sql, params = []) {
   const r = await pool.query(sql, params);
@@ -50,18 +70,5 @@ async function transaction(fn) {
     client.release();
   }
 }
-
-async function migrate() {
-  try {
-    const sql = fs.readFileSync(path.join(__dirname, 'schema.pg.sql'), 'utf-8');
-    await pool.query(sql);
-    console.log('✅ Schema aplicado');
-  } catch (err) {
-    console.error('❌ Erro na migration:', err.message);
-    process.exit(1);
-  }
-}
-
-migrate();
 
 module.exports = { query, queryOne, execute, transaction };
