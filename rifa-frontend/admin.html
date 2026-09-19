@@ -349,15 +349,24 @@ textarea.fi{resize:vertical;min-height:70px;font-family:var(--fb);}
     <label class="fl" style="margin-top:8px;">Prêmios</label>
     <div class="premio-row">
       <div class="premio-num">1º</div>
-      <input class="fi" id="nr-premio1" placeholder="Descrição do 1º prêmio"/>
+      <div style="width:100%;">
+        <input class="fi" id="nr-premio1" placeholder="Descrição do 1º prêmio"/>
+        <input class="fi" id="nr-premio1-foto" placeholder="URL da foto do 1º prêmio (opcional)" style="margin-top:6px;"/>
+      </div>
     </div>
     <div class="premio-row">
       <div class="premio-num">2º</div>
-      <input class="fi" id="nr-premio2" placeholder="Descrição do 2º prêmio (opcional)"/>
+      <div style="width:100%;">
+        <input class="fi" id="nr-premio2" placeholder="Descrição do 2º prêmio (opcional)"/>
+        <input class="fi" id="nr-premio2-foto" placeholder="URL da foto do 2º prêmio (opcional)" style="margin-top:6px;"/>
+      </div>
     </div>
     <div class="premio-row">
       <div class="premio-num">3º</div>
-      <input class="fi" id="nr-premio3" placeholder="Descrição do 3º prêmio (opcional)"/>
+      <div style="width:100%;">
+        <input class="fi" id="nr-premio3" placeholder="Descrição do 3º prêmio (opcional)"/>
+        <input class="fi" id="nr-premio3-foto" placeholder="URL da foto do 3º prêmio (opcional)" style="margin-top:6px;"/>
+      </div>
     </div>
 
     <button class="btn-primary" id="btn-salvar-rifa" style="width:100%;margin-top:18px;">CRIAR RIFA</button>
@@ -396,6 +405,34 @@ textarea.fi{resize:vertical;min-height:70px;font-family:var(--fb);}
     <div id="er-aviso" style="display:none;background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);color:var(--yellow);padding:10px 14px;font-family:var(--fc);font-size:12px;margin-bottom:14px;"></div>
 
     <button class="btn-primary" id="btn-salvar-edicao" style="width:100%;">SALVAR ALTERAÇÕES</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: PRÊMIOS (fotos) ══════════ -->
+<div class="modal-overlay" id="modal-premios">
+  <div class="modal">
+    <button class="modal-close" id="modal-premios-close">✕</button>
+    <div class="modal-title">🖼️ Fotos dos Prêmios</div>
+    <input type="hidden" id="pm-rifa-id"/>
+    <div id="pm-lista"></div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: COTAS PREMIADAS ══════════ -->
+<div class="modal-overlay" id="modal-cotas-premiadas">
+  <div class="modal">
+    <button class="modal-close" id="modal-cotas-premiadas-close">✕</button>
+    <div class="modal-title">🎯 Cotas Premiadas</div>
+    <input type="hidden" id="cp-rifa-id"/>
+    <p style="font-family:var(--fb);font-size:12px;color:var(--gray);margin-bottom:12px;">
+      Números que, ao serem sorteados na compra, já dão um prêmio ao comprador. Ficam visíveis publicamente no site.
+    </p>
+    <div id="cp-lista"></div>
+    <div class="fg-row" style="margin-top:14px;">
+      <input class="fi" id="cp-numero" type="number" placeholder="Número da cota"/>
+      <input class="fi" id="cp-descricao" placeholder="Prêmio (ex: R$200 PIX)"/>
+    </div>
+    <button class="btn-primary" id="btn-add-cota-premiada" style="width:100%;margin-top:8px;">+ Adicionar Cota Premiada</button>
   </div>
 </div>
 
@@ -438,6 +475,12 @@ textarea.fi{resize:vertical;min-height:70px;font-family:var(--fb);}
       <input class="fi" id="rl-marco-premio" placeholder="Prêmio garantido"/>
     </div>
     <button class="btn-purple" id="btn-add-marco-roleta" style="width:100%;margin-top:8px;">+ Adicionar Marco</button>
+
+    <div class="divider"></div>
+
+    <div class="section-title" style="margin-top:0;font-size:16px;">Memória da Roleta</div>
+    <button class="btn-secondary" id="btn-ver-historico-roleta" style="width:100%;margin-bottom:10px;">Ver Histórico de Giros</button>
+    <div id="rl-historico-lista" style="max-height:220px;overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -672,6 +715,9 @@ async function carregarRifas() {
             <button class="btn-small" onclick="verPedidos(${r.id}, '${tituloEsc}')">Pedidos</button>
             <button class="btn-small" onclick="abrirModalEditar(${r.id})">Editar</button>
             <button class="btn-purple" onclick="abrirModalRoleta(${r.id})">🎡 Roleta</button>
+            <button class="btn-small" onclick="abrirModalPremios(${r.id})">🖼️ Fotos</button>
+            <button class="btn-small" onclick="abrirModalCotasPremiadas(${r.id})">🎯 Cotas Premiadas</button>
+            <button class="btn-small" onclick="toggleRanking(${r.id}, ${r.ranking_ativo === false ? 'true' : 'false'})">🏆 Ranking: ${r.ranking_ativo === false ? 'Desligado' : 'Ligado'}</button>
             ${r.status === 'ativa' ? `<button class="btn-small" onclick="pausarRifa(${r.id})">⏸️ Pausar</button>` : ''}
             ${r.status === 'pausada' ? `<button class="btn-secondary" onclick="reativarRifa(${r.id})">▶️ Reativar</button>` : ''}
             ${r.status === 'ativa' ? `<button class="btn-small" onclick="encerrarRifa(${r.id})">Encerrar</button>` : ''}
@@ -717,9 +763,9 @@ R('btn-salvar-rifa').addEventListener('click', async () => {
   }
 
   const premios = [];
-  if (R('nr-premio1').value.trim()) premios.push({ posicao: 1, descricao: R('nr-premio1').value.trim() });
-  if (R('nr-premio2').value.trim()) premios.push({ posicao: 2, descricao: R('nr-premio2').value.trim() });
-  if (R('nr-premio3').value.trim()) premios.push({ posicao: 3, descricao: R('nr-premio3').value.trim() });
+  if (R('nr-premio1').value.trim()) premios.push({ posicao: 1, descricao: R('nr-premio1').value.trim(), imagem_url: R('nr-premio1-foto').value.trim() || null });
+  if (R('nr-premio2').value.trim()) premios.push({ posicao: 2, descricao: R('nr-premio2').value.trim(), imagem_url: R('nr-premio2-foto').value.trim() || null });
+  if (R('nr-premio3').value.trim()) premios.push({ posicao: 3, descricao: R('nr-premio3').value.trim(), imagem_url: R('nr-premio3-foto').value.trim() || null });
 
   try {
     await apiFetch('/rifas', {
@@ -735,7 +781,7 @@ R('btn-salvar-rifa').addEventListener('click', async () => {
 
     showToast('Rifa criada com sucesso! 🍀');
     R('modal-nova-rifa').classList.remove('ativo');
-    ['nr-titulo','nr-descricao','nr-preco','nr-meta','nr-data','nr-premio1','nr-premio2','nr-premio3']
+    ['nr-titulo','nr-descricao','nr-preco','nr-meta','nr-data','nr-premio1','nr-premio2','nr-premio3','nr-premio1-foto','nr-premio2-foto','nr-premio3-foto']
       .forEach(id => R(id).value = '');
     carregarRifas();
 
@@ -793,6 +839,137 @@ R('btn-salvar-edicao').addEventListener('click', async () => {
     showToast(e.message, true);
   }
 });
+
+// ══════════════════════════════════════════════════════════════════════
+// RANKING: liga/desliga
+// ══════════════════════════════════════════════════════════════════════
+async function toggleRanking(id, novoValor) {
+  try {
+    await apiFetch(`/rifas/${id}/ranking`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ativo: novoValor }),
+    });
+    showToast(`Ranking ${novoValor ? 'ativado' : 'desativado'}`);
+    carregarRifas();
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MODAL: FOTOS DOS PRÊMIOS
+// ══════════════════════════════════════════════════════════════════════
+let premiosRifaId = null;
+
+async function abrirModalPremios(rifaId) {
+  premiosRifaId = rifaId;
+  R('pm-rifa-id').value = rifaId;
+  try {
+    const rifa = await apiFetch(`/rifas/${rifaId}`);
+    renderPremiosLista(rifa.premios || []);
+    R('modal-premios').classList.add('ativo');
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+function renderPremiosLista(premios) {
+  if (premios.length === 0) {
+    R('pm-lista').innerHTML = '<div class="empty-state" style="padding:16px;">Nenhum prêmio cadastrado nesta rifa</div>';
+    return;
+  }
+  R('pm-lista').innerHTML = premios.map(p => `
+    <div class="fg" style="border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:14px;">
+      <label class="fl">${p.posicao}º lugar</label>
+      <input class="fi" value="${(p.descricao || '').replace(/"/g, '&quot;')}" id="pm-desc-${p.id}" placeholder="Descrição"/>
+      <input class="fi" value="${(p.imagem_url || '').replace(/"/g, '&quot;')}" id="pm-foto-${p.id}" placeholder="URL da foto" style="margin-top:6px;"/>
+      <button class="btn-small" style="margin-top:8px;" onclick="salvarFotoPremio(${p.id})">Salvar</button>
+    </div>
+  `).join('');
+}
+
+async function salvarFotoPremio(premioId) {
+  try {
+    await apiFetch(`/rifas/premios/${premioId}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        descricao:  R(`pm-desc-${premioId}`).value.trim(),
+        imagem_url: R(`pm-foto-${premioId}`).value.trim() || null,
+      }),
+    });
+    showToast('Prêmio atualizado!');
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+R('modal-premios-close').addEventListener('click', () => R('modal-premios').classList.remove('ativo'));
+
+// ══════════════════════════════════════════════════════════════════════
+// MODAL: COTAS PREMIADAS
+// ══════════════════════════════════════════════════════════════════════
+let cotasRifaId = null;
+
+async function abrirModalCotasPremiadas(rifaId) {
+  cotasRifaId = rifaId;
+  R('cp-rifa-id').value = rifaId;
+  await carregarCotasPremiadas();
+  R('modal-cotas-premiadas').classList.add('ativo');
+}
+
+async function carregarCotasPremiadas() {
+  try {
+    const cotas = await apiFetch(`/rifas/${cotasRifaId}/cotas-premiadas/admin`);
+    if (cotas.length === 0) {
+      R('cp-lista').innerHTML = '<div class="empty-state" style="padding:16px;">Nenhuma cota premiada cadastrada</div>';
+      return;
+    }
+    R('cp-lista').innerHTML = cotas.map(c => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-family:var(--fb);font-size:13px;">
+        <div>
+          <strong>Nº ${c.numero}</strong> — ${c.descricao}
+          ${c.revelado ? `<div style="font-size:11px;color:var(--green);margin-top:2px;">🎉 Ganho por ${c.comprador_nome || 'comprador'}</div>` : `<div style="font-size:11px;color:var(--gray);margin-top:2px;">Ainda não sorteada</div>`}
+        </div>
+        <button class="btn-danger" style="padding:4px 10px;" onclick="removerCotaPremiada(${c.id})">Remover</button>
+      </div>
+    `).join('');
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+R('btn-add-cota-premiada').addEventListener('click', async () => {
+  const numero    = parseInt(R('cp-numero').value);
+  const descricao = R('cp-descricao').value.trim();
+  if (!numero || !descricao) {
+    showToast('Preencha número e descrição', true);
+    return;
+  }
+  try {
+    await apiFetch(`/rifas/${cotasRifaId}/cotas-premiadas`, {
+      method: 'POST',
+      body: JSON.stringify({ numero, descricao }),
+    });
+    R('cp-numero').value = '';
+    R('cp-descricao').value = '';
+    carregarCotasPremiadas();
+    showToast('Cota premiada adicionada!');
+  } catch (e) {
+    showToast(e.message, true);
+  }
+});
+
+async function removerCotaPremiada(id) {
+  if (!confirm('Remover esta cota premiada?')) return;
+  try {
+    await apiFetch(`/rifas/cotas-premiadas/${id}`, { method: 'DELETE' });
+    carregarCotasPremiadas();
+  } catch (e) {
+    showToast(e.message, true);
+  }
+}
+
+R('modal-cotas-premiadas-close').addEventListener('click', () => R('modal-cotas-premiadas').classList.remove('ativo'));
 
 // ══════════════════════════════════════════════════════════════════════
 // MODAL: ROLETA
@@ -938,6 +1115,25 @@ R('btn-add-marco-roleta').addEventListener('click', async () => {
     R('rl-marco-premio').value = '';
     showToast('Marco adicionado');
     carregarMarcosRoleta(rifaRoletaId);
+  } catch (e) {
+    showToast(e.message, true);
+  }
+});
+
+R('btn-ver-historico-roleta').addEventListener('click', async () => {
+  try {
+    const historico = await apiFetch(`/roleta/${rifaRoletaId}/historico`);
+    if (historico.length === 0) {
+      R('rl-historico-lista').innerHTML = '<div class="empty-state" style="padding:12px;">Nenhum giro registrado ainda</div>';
+      return;
+    }
+    R('rl-historico-lista').innerHTML = historico.map(h => `
+      <div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--fb);font-size:12px;">
+        <strong>${h.participante_nome}</strong> — ${h.premio_nome}
+        <span style="color:var(--gray);"> (${h.tipo === 'garantido' ? 'marco garantido' : 'giro'})</span>
+        ${h.criado_em ? `<div style="color:var(--gray);font-size:11px;">${new Date(h.criado_em).toLocaleString('pt-BR')}</div>` : ''}
+      </div>
+    `).join('');
   } catch (e) {
     showToast(e.message, true);
   }

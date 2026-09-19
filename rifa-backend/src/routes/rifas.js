@@ -8,6 +8,16 @@ const { query, queryOne, execute, transaction } = require('../db/database');
 
 const router = express.Router();
 
+// ── HELPER: mascara nome pra exibição pública (LGPD) ─────────────────────
+function mascararNome(nomeCompleto) {
+  if (!nomeCompleto) return null;
+  const partes = nomeCompleto.trim().split(/\s+/);
+  if (partes.length === 1) return partes[0];
+  const primeiro = partes[0];
+  const ultimaInicial = partes[partes.length - 1][0];
+  return `${primeiro} ${ultimaInicial}.`;
+}
+
 // ── PÚBLICAS ────────────────────────────────────────────────────────────
 
 // GET /api/rifas — lista rifas ativas
@@ -89,6 +99,68 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// GET /api/rifas/:id/cotas-premiadas — lista pública das cotas premiadas
+router.get('/:id/cotas-premiadas', async (req, res) => {
+  try {
+    const cotas = await query(
+      `SELECT numero, descricao, revelado, comprador_nome, revelado_em
+       FROM cotas_premiadas
+       WHERE rifa_id = $1
+       ORDER BY numero ASC`,
+      [req.params.id]
+    );
+
+    // Só expõe o nome do ganhador (mascarado) quando a cota já foi revelada
+    const resultado = cotas.map(c => ({
+      numero:      c.numero,
+      descricao:   c.descricao,
+      revelado:    c.revelado,
+      ganhador:    c.revelado ? mascararNome(c.comprador_nome) : null,
+      revelado_em: c.revelado ? c.revelado_em : null,
+    }));
+
+    res.json(resultado);
+  } catch (err) {
+    console.error('[rifas/cotas-premiadas]', err);
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
+// GET /api/rifas/:id/ranking — ranking público de compradores (se habilitado)
+router.get('/:id/ranking', async (req, res) => {
+  try {
+    const rifa = await queryOne('SELECT ranking_ativo FROM rifas WHERE id = $1', [req.params.id]);
+    if (!rifa) return res.status(404).json({ erro: 'Rifa não encontrada' });
+
+    if (!rifa.ranking_ativo) {
+      return res.json({ ativo: false, ranking: [] });
+    }
+
+    const ranking = await query(`
+      SELECT p.nome, COUNT(b.id) AS total_cotas
+      FROM bilhetes b
+      JOIN pedidos pd       ON pd.id = b.pedido_id AND pd.status = 'pago'
+      JOIN participantes p  ON p.id  = pd.participante_id
+      WHERE b.rifa_id = $1
+      GROUP BY p.id, p.nome
+      ORDER BY total_cotas DESC
+      LIMIT 20
+    `, [req.params.id]);
+
+    res.json({
+      ativo: true,
+      ranking: ranking.map((r, i) => ({
+        posicao:      i + 1,
+        nome:         mascararNome(r.nome),
+        total_cotas:  parseInt(r.total_cotas),
+      })),
+    });
+  } catch (err) {
+    console.error('[rifas/ranking]', err);
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
 // GET /api/rifas/:id/resultado — resultado público do sorteio
 router.get('/:id/resultado', async (req, res) => {
   try {
@@ -155,7 +227,7 @@ router.post('/', authMiddleware, async (req, res) => {
     const {
       titulo, descricao, imagem_url,
       preco_bilhete, meta_bilhetes, meta_valor,
-      data_sorteio, premios = [],
+      data_sorteio, premios = [], cotas_premiadas = [],
     } = req.body;
 
     if (!titulo || !preco_bilhete) {
@@ -179,6 +251,15 @@ router.post('/', authMiddleware, async (req, res) => {
         await client.query(
           'INSERT INTO premios (rifa_id, posicao, descricao, imagem_url) VALUES ($1, $2, $3, $4)',
           [novaRifa.id, p.posicao, p.descricao, p.imagem_url]
+        );
+      }
+
+      // Insere as cotas premiadas se existirem
+      // formato esperado: [{ numero, descricao }, ...]
+      for (const c of cotas_premiadas) {
+        await client.query(
+          'INSERT INTO cotas_premiadas (rifa_id, numero, descricao) VALUES ($1, $2, $3)',
+          [novaRifa.id, c.numero, c.descricao]
         );
       }
 
@@ -223,6 +304,97 @@ router.put('/:id', authMiddleware, async (req, res) => {
     res.json({ ...atualizada, aviso: temVendas ? 'Esta rifa já possui vendas — alterar o preço não afeta pedidos já criados.' : null });
   } catch (err) {
     console.error('[rifas/editar]', err);
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
+// PATCH /api/rifas/:id/ranking — liga/desliga o ranking público de compradores
+router.patch('/:id/ranking', authMiddleware, async (req, res) => {
+  try {
+    const { ativo } = req.body;
+    if (typeof ativo !== 'boolean') {
+      return res.status(400).json({ erro: 'Campo "ativo" (boolean) é obrigatório' });
+    }
+
+    const atualizada = await queryOne(
+      'UPDATE rifas SET ranking_ativo = $1 WHERE id = $2 RETURNING *',
+      [ativo, req.params.id]
+    );
+    if (!atualizada) return res.status(404).json({ erro: 'Rifa não encontrada' });
+
+    res.json(atualizada);
+  } catch (err) {
+    console.error('[rifas/ranking-toggle]', err);
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
+// PUT /api/rifas/premios/:premioId — edita um prêmio existente (ex: adicionar/trocar foto)
+router.put('/premios/:premioId', authMiddleware, async (req, res) => {
+  try {
+    const { descricao, imagem_url, posicao } = req.body;
+
+    const atualizado = await queryOne(`
+      UPDATE premios SET
+        descricao  = COALESCE($1, descricao),
+        imagem_url = COALESCE($2, imagem_url),
+        posicao    = COALESCE($3, posicao)
+      WHERE id = $4
+      RETURNING *
+    `, [descricao, imagem_url, posicao, req.params.premioId]);
+
+    if (!atualizado) return res.status(404).json({ erro: 'Prêmio não encontrado' });
+    res.json(atualizado);
+  } catch (err) {
+    console.error('[rifas/premio-editar]', err);
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
+// POST /api/rifas/:id/cotas-premiadas — adiciona cotas premiadas a uma rifa existente
+router.post('/:id/cotas-premiadas', authMiddleware, async (req, res) => {
+  try {
+    const { numero, descricao } = req.body;
+    if (numero === undefined || !descricao) {
+      return res.status(400).json({ erro: 'Número e descrição são obrigatórios' });
+    }
+
+    const cota = await queryOne(
+      'INSERT INTO cotas_premiadas (rifa_id, numero, descricao) VALUES ($1, $2, $3) RETURNING *',
+      [req.params.id, numero, descricao]
+    );
+
+    res.status(201).json(cota);
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(400).json({ erro: 'Já existe uma cota premiada com esse número nesta rifa' });
+    }
+    console.error('[rifas/cota-premiada-criar]', err);
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
+// GET /api/rifas/:id/cotas-premiadas/admin — lista completa (com nome não mascarado) pro painel
+router.get('/:id/cotas-premiadas/admin', authMiddleware, async (req, res) => {
+  try {
+    const cotas = await query(
+      'SELECT * FROM cotas_premiadas WHERE rifa_id = $1 ORDER BY numero ASC',
+      [req.params.id]
+    );
+    res.json(cotas);
+  } catch (err) {
+    console.error('[rifas/cotas-premiadas-admin]', err);
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
+// DELETE /api/rifas/cotas-premiadas/:cotaId — remove uma cota premiada
+router.delete('/cotas-premiadas/:cotaId', authMiddleware, async (req, res) => {
+  try {
+    await execute('DELETE FROM cotas_premiadas WHERE id = $1', [req.params.cotaId]);
+    res.json({ mensagem: 'Cota premiada removida' });
+  } catch (err) {
+    console.error('[rifas/cota-premiada-remover]', err);
     res.status(500).json({ erro: 'Erro interno' });
   }
 });

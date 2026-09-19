@@ -364,6 +364,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   <ul id="hnav">
     <li><a href="#prize-section">Prêmio</a></li>
     <li><a href="#compra-section">Participar</a></li>
+    <li><a href="#" id="btn-abrir-consulta-cpf" onclick="return false;">🔍 Minhas Cotas</a></li>
   </ul>
   <a href="#compra-section" id="hcta">Quero Participar</a>
 </header>
@@ -420,7 +421,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 
     <div class="pc" id="pc1">
       <span class="pc-n">1</span>
-      <span class="pc-icon">🏆</span>
+      <span class="pc-icon" id="pc1-icon">🏆</span>
+      <img id="pc1-img" style="display:none;width:100%;max-height:160px;object-fit:cover;margin-bottom:12px;" alt="Foto do 1º prêmio"/>
       <div class="pc-place r">1º Lugar</div>
       <!-- EDITE: document.getElementById('pc1-desc').textContent -->
       <div class="pc-desc" id="pc1-desc">
@@ -431,7 +433,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 
     <div class="pc" id="pc2">
       <span class="pc-n">2</span>
-      <span class="pc-icon">🎁</span>
+      <span class="pc-icon" id="pc2-icon">🎁</span>
+      <img id="pc2-img" style="display:none;width:100%;max-height:160px;object-fit:cover;margin-bottom:12px;" alt="Foto do 2º prêmio"/>
       <div class="pc-place g">2º Lugar</div>
       <div class="pc-desc" id="pc2-desc">Descreva o segundo prêmio aqui.</div>
       <span class="pc-badge g">2º Prêmio</span>
@@ -439,13 +442,28 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 
     <div class="pc" id="pc3">
       <span class="pc-n">3</span>
-      <span class="pc-icon">🎉</span>
+      <span class="pc-icon" id="pc3-icon">🎉</span>
+      <img id="pc3-img" style="display:none;width:100%;max-height:160px;object-fit:cover;margin-bottom:12px;" alt="Foto do 3º prêmio"/>
       <div class="pc-place g">3º Lugar</div>
       <div class="pc-desc" id="pc3-desc">Descreva o terceiro prêmio aqui.</div>
       <span class="pc-badge g">3º Prêmio</span>
     </div>
 
   </div>
+</section>
+
+<!-- COTAS PREMIADAS -->
+<section id="cotas-premiadas-section" style="display:none;padding:60px 20px;text-align:center;">
+  <p style="font-family:var(--fc);letter-spacing:2px;color:var(--green);text-transform:uppercase;font-size:13px;">✦ Cotas Premiadas ✦</p>
+  <h2 style="font-family:var(--fd);font-size:28px;color:var(--white);margin:8px 0 24px;">Números que já dão prêmio</h2>
+  <div id="cotas-premiadas-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;max-width:900px;margin:0 auto;"></div>
+</section>
+
+<!-- RANKING DE COMPRADORES -->
+<section id="ranking-section" style="display:none;padding:60px 20px;text-align:center;">
+  <p style="font-family:var(--fc);letter-spacing:2px;color:var(--green);text-transform:uppercase;font-size:13px;">✦ Ranking ✦</p>
+  <h2 style="font-family:var(--fd);font-size:28px;color:var(--white);margin:8px 0 24px;">Quem mais comprou cotas</h2>
+  <div id="ranking-lista" style="max-width:500px;margin:0 auto;text-align:left;"></div>
 </section>
 
 <!-- PROGRESSO -->
@@ -555,7 +573,47 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     na data indicada. Ao participar você concorda com os termos da rifa e com o tratamento dos seus
     dados conforme a LGPD (Lei 13.709/2018).
   </p>
+  <p style="margin-top:10px;">
+    <a href="#" id="btn-abrir-privacidade" onclick="return false;" style="color:var(--gray);font-family:var(--fc);font-size:11px;text-decoration:underline;">Política de Privacidade</a>
+  </p>
 </footer>
+
+<!-- MODAL: CONSULTA DE COTAS POR CPF -->
+<div id="cpf-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:var(--dark2);border:1px solid var(--dark4);padding:28px;max-width:420px;width:90%;position:relative;">
+    <button id="cpf-close" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--gray);font-size:18px;cursor:pointer;">✕</button>
+    <h3 style="font-family:var(--fd);color:var(--white);margin-bottom:14px;">🔍 Minhas Cotas</h3>
+    <p style="font-family:var(--fb);color:var(--gray);font-size:13px;margin-bottom:14px;">Digite seu CPF para ver as cotas que você já comprou.</p>
+    <input id="cpf-input" type="text" placeholder="Somente números" maxlength="14"
+           style="width:100%;padding:10px 14px;background:var(--dark3);border:1px solid var(--dark4);color:var(--white);font-family:var(--fb);margin-bottom:10px;"/>
+    <button id="cpf-buscar" style="width:100%;padding:12px;background:var(--red);color:var(--white);border:none;font-family:var(--fc);letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Buscar</button>
+    <div id="cpf-resultado" style="margin-top:16px;font-family:var(--fb);color:var(--white);font-size:13px;max-height:280px;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- MODAL: POLÍTICA DE PRIVACIDADE (LGPD) -->
+<div id="privacidade-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:var(--dark2);border:1px solid var(--dark4);padding:28px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;position:relative;">
+    <button id="privacidade-close" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--gray);font-size:18px;cursor:pointer;">✕</button>
+    <h3 style="font-family:var(--fd);color:var(--white);margin-bottom:14px;">Política de Privacidade</h3>
+    <div style="font-family:var(--fb);color:var(--gray);font-size:13px;line-height:1.7;text-align:left;">
+      <p><strong style="color:var(--white);">1. Dados que coletamos</strong><br/>
+      Ao participar de uma rifa, coletamos seu nome completo, CPF e número de telefone (WhatsApp), usados exclusivamente para emissão dos bilhetes, processamento do pagamento via PIX e contato em caso de premiação.</p><br/>
+      <p><strong style="color:var(--white);">2. Base legal</strong><br/>
+      O tratamento desses dados se baseia na execução do contrato de participação na rifa, conforme o Art. 7º, V, da Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD).</p><br/>
+      <p><strong style="color:var(--white);">3. Como usamos seus dados</strong><br/>
+      Seus dados são usados para: gerar a cobrança PIX; vincular os bilhetes comprados ao seu nome/CPF; identificá-lo caso seu número seja sorteado ou premiado; e permitir a consulta das suas próprias cotas.</p><br/>
+      <p><strong style="color:var(--white);">4. Compartilhamento</strong><br/>
+      Seus dados de pagamento são processados pela instituição financeira responsável pelo PIX (EFI Bank). Não vendemos nem compartilhamos seus dados com terceiros para fins de marketing.</p><br/>
+      <p><strong style="color:var(--white);">5. Exibição pública</strong><br/>
+      Em caso de premiação (sorteio principal, cota premiada ou ranking de compradores), apenas seu primeiro nome e a inicial do último sobrenome podem ser exibidos publicamente no site — nunca seu CPF, telefone completo ou nome completo.</p><br/>
+      <p><strong style="color:var(--white);">6. Seus direitos</strong><br/>
+      Você pode solicitar a qualquer momento a confirmação, correção ou exclusão dos seus dados pessoais, entrando em contato pelos canais informados no rodapé deste site.</p><br/>
+      <p><strong style="color:var(--white);">7. Armazenamento</strong><br/>
+      Seus dados ficam armazenados em ambiente seguro pelo tempo necessário para cumprir as finalidades acima e obrigações legais aplicáveis.</p>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL PIX -->
 <div id="pix-overlay">
@@ -743,10 +801,26 @@ async function carregarRifa() {
         .filter(p => p !== null)
         .sort((a, b) => (a.posicao ?? 99) - (b.posicao ?? 99));
 
-      if (premios[0] && R('pc1-desc')) R('pc1-desc').textContent = premios[0].descricao ?? '';
-      if (premios[1] && R('pc2-desc')) R('pc2-desc').textContent = premios[1].descricao ?? '';
-      if (premios[2] && R('pc3-desc')) R('pc3-desc').textContent = premios[2].descricao ?? '';
+      const aplicarPremio = (idx, sufixo) => {
+        const p = premios[idx];
+        if (!p) return;
+        if (R(`pc${sufixo}-desc`)) R(`pc${sufixo}-desc`).textContent = p.descricao ?? '';
+        const img = R(`pc${sufixo}-img`);
+        const icon = R(`pc${sufixo}-icon`);
+        if (img && p.imagem_url) {
+          img.src = p.imagem_url;
+          img.style.display = 'block';
+          if (icon) icon.style.display = 'none';
+        }
+      };
+      aplicarPremio(0, '1');
+      aplicarPremio(1, '2');
+      aplicarPremio(2, '3');
     }
+
+    // Cotas premiadas e ranking (não bloqueiam o carregamento principal se falharem)
+    carregarCotasPremiadas();
+    carregarRanking();
 
     // Título da página
     document.title = `${rifa.titulo} — Top Rifas`;
@@ -1183,6 +1257,105 @@ function mostrarResultadoRoleta(premio) {
 
 R('btn-fechar-resultado').addEventListener('click', () => {
   R('roleta-resultado-overlay').classList.remove('ativo');
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// COTAS PREMIADAS
+// ══════════════════════════════════════════════════════════════════════
+async function carregarCotasPremiadas() {
+  try {
+    const res = await fetch(`${API}/rifas/${RIFA_ID}/cotas-premiadas`);
+    if (!res.ok) return;
+    const cotas = await res.json();
+    if (!cotas.length) return;
+
+    R('cotas-premiadas-section').style.display = 'block';
+    R('cotas-premiadas-grid').innerHTML = cotas.map(c => `
+      <div style="background:var(--dark3);border:1px solid ${c.revelado ? 'var(--green)' : 'var(--dark4)'};padding:16px;">
+        <div style="font-family:var(--fd);font-size:22px;color:var(--white);">Nº ${c.numero}</div>
+        <div style="font-family:var(--fb);color:var(--gray);font-size:13px;margin:6px 0;">${c.descricao}</div>
+        ${c.revelado
+          ? `<div style="font-family:var(--fc);font-size:11px;color:var(--green);">🎉 Já premiada — ${c.ganhador || 'ganhador'}</div>`
+          : `<div style="font-family:var(--fc);font-size:11px;color:var(--gray);">Ainda disponível</div>`}
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('[carregarCotasPremiadas]', err);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// RANKING DE COMPRADORES
+// ══════════════════════════════════════════════════════════════════════
+async function carregarRanking() {
+  try {
+    const res = await fetch(`${API}/rifas/${RIFA_ID}/ranking`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ativo || !data.ranking?.length) return;
+
+    R('ranking-section').style.display = 'block';
+    R('ranking-lista').innerHTML = data.ranking.map(r => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--dark3);margin-bottom:8px;border-left:3px solid ${r.posicao <= 3 ? 'var(--green)' : 'var(--dark4)'};">
+        <span style="font-family:var(--fb);color:var(--white);">
+          <strong style="color:var(--green);">${r.posicao}º</strong> ${r.nome}
+        </span>
+        <span style="font-family:var(--fc);color:var(--gray);font-size:12px;">${r.total_cotas} cota(s)</span>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('[carregarRanking]', err);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// CONSULTA DE COTAS POR CPF
+// ══════════════════════════════════════════════════════════════════════
+R('btn-abrir-consulta-cpf').addEventListener('click', () => {
+  R('cpf-overlay').style.display = 'flex';
+});
+R('cpf-close').addEventListener('click', () => {
+  R('cpf-overlay').style.display = 'none';
+});
+R('cpf-buscar').addEventListener('click', async () => {
+  const cpf = R('cpf-input').value.replace(/\D/g, '');
+  if (cpf.length !== 11) {
+    R('cpf-resultado').innerHTML = '<p style="color:var(--red-hot);">CPF inválido.</p>';
+    return;
+  }
+  R('cpf-resultado').innerHTML = '<p style="color:var(--gray);">Buscando...</p>';
+  try {
+    const res = await fetch(`${API}/bilhetes/cpf/${cpf}`);
+    const data = await res.json();
+    if (!res.ok || !data.bilhetes?.length) {
+      R('cpf-resultado').innerHTML = '<p style="color:var(--gray);">Nenhuma cota encontrada para esse CPF.</p>';
+      return;
+    }
+    const porRifa = {};
+    data.bilhetes.forEach(b => {
+      if (!porRifa[b.rifa_titulo]) porRifa[b.rifa_titulo] = [];
+      porRifa[b.rifa_titulo].push(b.numero);
+    });
+    R('cpf-resultado').innerHTML = Object.entries(porRifa).map(([titulo, numeros]) => `
+      <div style="margin-bottom:12px;">
+        <strong style="color:var(--green);">${titulo}</strong><br/>
+        <span style="color:var(--gray);">${numeros.join(', ')}</span>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('[consultaCpf]', err);
+    R('cpf-resultado').innerHTML = '<p style="color:var(--red-hot);">Erro ao buscar. Tente novamente.</p>';
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// POLÍTICA DE PRIVACIDADE
+// ══════════════════════════════════════════════════════════════════════
+R('btn-abrir-privacidade').addEventListener('click', () => {
+  R('privacidade-overlay').style.display = 'flex';
+});
+R('privacidade-close').addEventListener('click', () => {
+  R('privacidade-overlay').style.display = 'none';
 });
 
 // ══════════════════════════════════════════════════════════════════════

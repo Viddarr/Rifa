@@ -229,6 +229,29 @@ router.post('/:rifaId/marcos', authMiddleware, async (req, res) => {
   }
 });
 
+// ── ADMIN: histórico (memória) de giros e resultados da roleta ─────────
+// OBS: assume que roleta_resultados tem uma coluna de timestamp chamada
+// "criado_em" (mesmo padrão das outras tabelas do projeto). Se o nome
+// real for diferente, ajuste o ORDER BY abaixo.
+router.get('/:rifaId/historico', authMiddleware, async (req, res) => {
+  try {
+    const historico = await query(`
+      SELECT rr.id, rr.tipo, rr.premio_nome, rr.criado_em,
+             p.nome AS participante_nome, p.telefone AS participante_telefone
+      FROM roleta_resultados rr
+      JOIN participantes p ON p.id = rr.participante_id
+      WHERE rr.rifa_id = $1
+      ORDER BY rr.criado_em DESC NULLS LAST, rr.id DESC
+      LIMIT 200
+    `, [req.params.rifaId]);
+
+    res.json(historico);
+  } catch (err) {
+    console.error('[roleta/historico]', err);
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
 // ── ADMIN: remover marco garantido ──────────────────────────────────────
 router.delete('/marcos/:marcoId', authMiddleware, async (req, res) => {
   try {
