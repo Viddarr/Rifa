@@ -782,6 +782,14 @@ async function carregarRifa() {
 
     state.precoBilhete = parseFloat(rifa.preco_bilhete);
 
+    // Seleciona "1 bilhete" como padrão e já atualiza o valor exibido,
+    // em vez de deixar o placeholder estático "R$ 10,00" do HTML
+    state.qtd = 1;
+    document.querySelectorAll('.qtd-card').forEach(c => {
+      c.classList.toggle('ativo', parseInt(c.dataset.v) === 1);
+    });
+    syncPreview();
+
     // Stats do hero
     const vendidos  = parseInt(rifa.total_bilhetes_vendidos) || 0;
     const meta      = rifa.meta_bilhetes;
