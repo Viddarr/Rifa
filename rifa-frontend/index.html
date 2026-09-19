@@ -269,12 +269,13 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
    ROLETA — banner pós-pagamento
 ══════════════════════════════════════ */
 #roleta-banner{
-  position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-120%);
+  position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-200px);
   background:var(--dark3);border:1px solid rgba(34,197,94,0.4);border-left:4px solid var(--green);
   padding:16px 22px;z-index:160;display:flex;align-items:center;gap:16px;
   transition:transform .5s cubic-bezier(.34,1.56,.64,1);max-width:90vw;
+  pointer-events:none;
 }
-#roleta-banner.visivel{transform:translateX(-50%) translateY(0);}
+#roleta-banner.visivel{transform:translateX(-50%) translateY(0);pointer-events:auto;}
 #roleta-banner-text{font-family:var(--fc);font-size:14px;color:var(--off);}
 #roleta-banner-text strong{color:var(--green);}
 #roleta-banner-btn{
@@ -364,7 +365,6 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   <ul id="hnav">
     <li><a href="#prize-section">Prêmio</a></li>
     <li><a href="#compra-section">Participar</a></li>
-    <li><a href="#" id="btn-abrir-consulta-cpf" onclick="return false;">🔍 Minhas Cotas</a></li>
   </ul>
   <a href="#compra-section" id="hcta">Quero Participar</a>
 </header>
@@ -577,6 +577,16 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     <a href="#" id="btn-abrir-privacidade" onclick="return false;" style="color:var(--gray);font-family:var(--fc);font-size:11px;text-decoration:underline;">Política de Privacidade</a>
   </p>
 </footer>
+
+<button id="btn-abrir-consulta-cpf" style="
+  position:fixed;bottom:24px;left:24px;z-index:150;
+  background:linear-gradient(135deg,#1f2937,#374151);
+  color:#fff;border:1px solid var(--dark4);border-radius:50px;
+  padding:14px 20px;display:flex;align-items:center;gap:8px;
+  font-family:var(--fc);font-size:13px;font-weight:700;letter-spacing:1px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.4);cursor:pointer;">
+  🔍 <span>Minhas Cotas</span>
+</button>
 
 <!-- MODAL: CONSULTA DE COTAS POR CPF -->
 <div id="cpf-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;">
